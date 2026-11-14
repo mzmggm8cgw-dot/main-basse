@@ -71,7 +71,16 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;mar
 [hidden]{display:none!important}
 .icbtn.mic-on{border-color:#7fd39a;box-shadow:0 0 12px rgba(127,211,154,.55)}
 .tag.speaking{border-color:#7fd39a;box-shadow:0 0 14px rgba(127,211,154,.7)}.tag.speaking .nm::after{content:' 🎙️';font-size:.8em}
-#lobby{background:#070505}
+#lobby{background:linear-gradient(rgba(7,5,5,0) 0%,rgba(7,5,5,0) 44%,rgba(7,5,5,.9) 56%,#070505 72%);align-items:flex-end;padding-top:0}
+body.inlobby header,body.inlobby #me,body.inlobby #hint,body.inlobby #controls{display:none!important}
+#lobby:not(.solid) .code{font-size:clamp(26px,8vw,36px);letter-spacing:5px}#lobby:not(.solid) .e-t{font-size:clamp(20px,6vw,28px)}#lobby:not(.solid) .e-s{font-size:12px}#lobby:not(.solid) .lob li{padding:5px 10px;font-size:14px}#lobby:not(.solid) .btn.big{padding:11px}
+#lobby.solid{background:#070505;align-items:center}
+#lobby .ov-in{max-height:56vh;overflow:auto;margin:auto auto 0}
+body.inlobby .tag .hands{display:none}
+#lobby .e-t{margin:2px 0}#lobby .e-s{margin-bottom:8px}
+.apick{display:flex;gap:5px;justify-content:center;margin:0 0 10px}
+.ab{flex:1;max-width:72px;background:rgba(0,0,0,.4);border:1px solid rgba(176,141,87,.45);border-radius:10px;padding:5px 2px;font-size:clamp(9px,2.7vw,11px);color:var(--bone);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+.ab span{font-size:clamp(20px,6.5vw,26px);line-height:1}.ab.on{border-color:var(--ember);box-shadow:0 0 12px rgba(255,140,40,.55);background:rgba(90,40,10,.5)}.ab:disabled{opacity:.25}
 .code{font-family:'Special Elite',monospace;letter-spacing:8px;color:var(--bone);font-size:46px}
 .lob{list-style:none;padding:0;margin:0 0 14px;text-align:left}.lob li{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid rgba(232,220,192,.12);font-size:16px}.lob li .ok{margin-left:auto;color:#7fd39a;font-size:13px}
 .lobrow{display:flex;align-items:center;justify-content:center;gap:12px;margin:0 0 14px;font-size:15px}.lobrow .btn{min-width:46px;padding:8px}
@@ -288,6 +297,7 @@ header{gap:clamp(3px,1.4vw,7px)}
     <div class="modes" id="ruleRow" hidden><button class="btn rule on" data-r="gun">🔫 Revolver<small>perdre = presser la détente</small></button><button class="btn rule" data-r="hands">✋ Mains<small>perdre = une main en moins</small></button></div>
     <div class="modes"><button class="btn mode on" data-h="1">🤖 Robots<small>toi contre 4 robots</small></button><button class="btn mode" data-h="2">🧑‍🤝‍🧑 Collaborateurs<small>à plusieurs, on se passe l’écran</small></button></div>
     <div id="hc" hidden>Joueurs humains&nbsp;:<button class="btn on" data-n="2">2</button><button class="btn" data-n="3">3</button><button class="btn" data-n="4">4</button><button class="btn" data-n="5">5</button></div>
+    <div class="apick" id="tPick"></div>
     <div id="names"></div>
     <div class="opts"><button class="btn" id="nbBtn" hidden>🤖 Robots en plus&nbsp;: 0</button><button class="btn" id="fsTitle">⛶ Plein écran</button><button class="btn" id="infBtn">♾️ Infini&nbsp;: non</button></div>
     <button class="btn big" id="startBtn">S’asseoir à la table</button>
@@ -335,7 +345,7 @@ const PI=Math.PI,TAU=PI*2;
 
 /* ================= STATE ================= */
 const G={players:[],round:0,device:null,actor:-1,focus:-1,extra:{},speed:1,baseSpeed:1,out:[],spectate:false,cardLocked:false,ui:'',logs:[],
-  autoplay:false,acting:false,selCard:-1,lastType:null,bag:[],paused:false,forceType:null,names:[],online:null,me:0,perm:[0,1,2,3],humans:1,view:0,game:'liar',bots:0,endless:false,score:{},lsel:[],lcan:{},llast:null,rule:'gun',noRender:false};
+  autoplay:false,acting:false,selCard:-1,lastType:null,bag:[],paused:false,forceType:null,names:[],online:null,me:0,myAnimal:4,animals:[4,0,1,2,3],lobby3d:false,lob:{},perm:[0,1,2,3],humans:1,view:0,game:'liar',bots:0,endless:false,score:{},lsel:[],lcan:{},llast:null,rule:'gun',noRender:false};
 let TOKEN=0;const ABORT=new Error('abort');ABORT.abort=true;
 function sleep(ms){const t=TOKEN;return new Promise((res,rej)=>{const go=()=>{if(TOKEN!==t)return rej(ABORT);if(G.paused)return setTimeout(go,150);res()};setTimeout(go,ms/G.speed)})}
 function prog(t0,dur){return clamp((now()-t0)*G.speed/dur,0,1)}
@@ -363,6 +373,8 @@ const PERSONAS=[
  {name:'La Veuve',color:'#2a2a35',mask:'veil',fear:.28,lie:.68,cruelty:.7,greed:.35,skill:.8,humanBias:.35,
   lines:{turn:['…','Mm.'],scared:['…'],safe:['…','La table a faim.'],hit:['…ah.','…'],pass:['Pas moi.','Toi.'],sabotage:['Ta main tremble.','…deux fois.'],taunt:['Une de moins.','…'],revenge:['…je me souviens.'],greed:['…trois.'],win:['…'],think:['…'],cheer:['…hm.']}}
 ];
+PERSONAS.push({name:'Roxane',color:'#7a3f17',mask:'you',fear:.3,lie:.5,cruelty:.5,greed:.4,skill:.72,humanBias:.3,lines:{turn:['À moi de jouer.','Regardez bien…'],scared:['Mauvais présage…','Hmm. Pas aimé ça.'],safe:['Trop facile.','On continue ?'],hit:['Aïe !'],pass:['À toi.'],sabotage:['Petit cadeau.'],taunt:['Quel dommage.','Bien fait.'],revenge:['Je n’oublie pas.'],greed:['Allez, trois.'],win:['Le renard gagne toujours.'],think:['Voyons voir…'],cheer:['Ha !','Bien joué.']}});
+const ANIMALS=[{n:'Corbeau',e:'🐦'},{n:'Chèvre',e:'🐐'},{n:'Crapaud',e:'🐸'},{n:'Chouette',e:'🦉'},{n:'Renard',e:'🦊'}];
 const HUMAN_P={fear:.3,lie:.5,cruelty:.4,greed:.3,skill:.72,humanBias:0,lines:{}};
 const LOC=['à gauche','au milieu','à droite'];
 const LOCN=['de gauche','du milieu','de droite'];
@@ -757,7 +769,10 @@ const ANIMAL=[
    f.add(N(MS.coneD,AM.beak,[0,-.035,.15],[-PI/2+.7,0,0],[.022,.07,.022]));r.mouth.vis=false}
 ];
 const HUMAN_LOOK={skin:'#c98646',cloth:'#34495a',shW:.25,headS:[1,1,1],tagH:.3,arm:[.46,.48,.05,.046],body(r,b,sk,cl){b.add(N(MS.torso,cl,null,null,[1.3,1,.8]));b.add(N(MS.box,M.shirt,[0,.47,.12],[-.25,0,0],[.09,.16,.03]))},head(){}};
+const FOXL={skin:'#c98646',cloth:'#34495a',shW:.24,headS:[1,1,1],tagH:.3,arm:[.34,.35,.045,.04],body(r,b,sk,cl){b.add(N(MS.torso,cl,null,null,[1.2,1,.78]));b.add(N(MS.box,M.shirt,[0,.47,.12],[-.25,0,0],[.09,.16,.03]))},head(){}};
 const FOX=(r,f,sk,L)=>{for(const s of[-1,1])f.add(N(MS.coneD,sk,[s*.085,.16,-.01],[PI,0,-s*.3],[.045,.14,.03]));f.add(N(MS.sph,AM.white,[0,-.04,.11],null,[.06,.05,.09]));f.add(N(MS.sph,AM.dark,[0,-.022,.2],null,[.02,.014,.012]));r.mouth.p=[0,-.088,.15]};
+LOOKS.push(FOXL);ANIMAL.push(FOX);
+const LSEATS=[-52,-26,0,26,52].map(f=>{const a=f*PI/180;return[SEAT_R*Math.sin(a),0,-SEAT_R*Math.cos(a)]});
 let RIGS=[];
 function toLocal(r,w){const v=V3.sub(w,r.root.p),c=Math.cos(r.ang),s=Math.sin(r.ang);return[v[0]*c-v[2]*s,v[1],v[0]*s+v[2]*c]}
 function setLimb(n,a,b,r){const d=V3.sub(b,a),L=V3.len(d)||1e-4;n.p=V3.mul(V3.add(a,b),.5);n.q=Q.fromTo([0,1,0],V3.mul(d,1/L));n.s=[r,L,r]}
@@ -770,7 +785,7 @@ function buildHand(par,m,s,sc){const g=par.add(N(null,null,null,null,sc));
   const th=g.add(N(null,null,[-s*.036,-.004,.03],[0,-s*.8,0]));th.add(N(MS.cyl,m,[0,0,.022],[PI/2,0,0],[.011,.045,.011]));th.add(N(MS.sphL,m,[0,0,.045],null,.011));
   return{g,fingers}}
 function buildRig(i){
-  const isH=i===0,L=isH?HUMAN_LOOK:LOOKS[G.perm[i-1]],sp=SEATS[i];
+  const isH=false,an=G.animals[i]==null?4:G.animals[i],L=LOOKS[an],sp=(G.lobby3d?LSEATS:SEATS)[i];
   const ang=Math.atan2(-sp[0],-sp[2]);const root=N(null,null,[sp[0],0,sp[2]],[0,ang,0]);SCENE.add(root);
   const r={i,isH,L,root,ang,arms:{},t0:rand()*10,blinkT:1+rand()*3,blinkA:0,talkUntil:0,lean:0,yaw:0,pitch:0,cheerUntil:0,fearUntil:0,hurt:0,deadA:0,reachT:null,reachSide:'R',reachK:10,hover:null,pointT:null,pointUntil:0,peekUntil:0,lookCamUntil:0,cheerA:0,fearA:0};
   const skin=r.skin=mat(L.skin,{sp:.18,sh:10}),cloth=mat(L.cloth,{sp:.06,sh:8});
@@ -788,7 +803,7 @@ function buildRig(i){
     r.brows=[];for(const s of[-1,1]){const b=f.add(N(MS.box,mat(L.noWhites?'#111':'#2a1a10'),[s*.05,.07,.118],null,[.052,.011,.014]));b.sd=s;r.brows.push(b)}
     f.add(N(MS.sph,L.noseRed?mat('#c9715a'):skin,[0,-.012,.128],null,L.nose||[.024,.028,.032]));
     r.mouth=f.add(N(MS.sph,M.mouth,[0,-.07,.108],null,[.04,.006,.016]));
-    (isH?FOX:ANIMAL[G.perm[i-1]])(r,f,skin,L);if(isH){body.vis=false;ch.vis=false}
+    ANIMAL[an](r,f,skin,L);
   }
   const A=L.arm;
   for(const sd of['L','R']){const s=sd==='L'?1:-1;const sleeve=cloth,fore=L.foreSkin?skin:(L.gloves?handM:cloth);
@@ -1301,12 +1316,12 @@ function buildTags(){const c=$('#tags');c.innerHTML='';for(let i=0;i<5;i++){cons
   d.innerHTML=`<div class="bubble"></div><div class="nm">${p.name}</div><div class="hands"></div><div class="meta"></div>`;d.addEventListener('click',()=>{if(G.ui==='target'&&p.alive)giveInput('target',i)});c.appendChild(d);p.tag=d}
   $('#meAva').innerHTML=avatarSVG('you',G.players[0].color)}
 function updateTags(){for(let i=0;i<5;i++){const p=G.players[i],d=p.tag;if(!d)continue;d.classList.toggle('active',G.actor===i&&p.alive);d.classList.toggle('dead',!p.alive);d.classList.toggle('targetable',G.ui==='target'&&p.alive);
-  d.querySelector('.hands').innerHTML=lifeHTML(p);d.querySelector('.meta').innerHTML=p.alive?`<span><i class="cb"></i>×${G.game==='liar'?p.hand.length:p.cards.length}</span>${p.claims?`<span class="lie">mens. ${p.lies}/${p.claims}</span>`:''}${G.extra[i]?'<span class="sab">✂️×2</span>':''}`:'<span>a quitté la table</span>'}}
+  d.querySelector('.hands').innerHTML=lifeHTML(p);d.querySelector('.meta').innerHTML=G.lobby3d?`<span>${p.lobTag||''}</span>`:p.alive?`<span><i class="cb"></i>×${G.game==='liar'?p.hand.length:p.cards.length}</span>${p.claims?`<span class="lie">mens. ${p.lies}/${p.claims}</span>`:''}${G.extra[i]?'<span class="sab">✂️×2</span>':''}`:'<span>a quitté la table</span>'}}
 function placeTags(){for(let i=0;i<5;i++){const p=G.players[i],r=RIGS[i];if(!p||!p.tag||!r)continue;if(p.absent||r.fp){p.tag.style.display='none';continue}const s=toScreen(rigTagAnchor(r));if(!s){p.tag.style.display='none';continue}p.tag.style.display='';
-  const x=clamp(s[0],44,CAM.w-44),y=clamp(s[1],CAM.h>CAM.w?118:60,CAM.h);p.tag.style.transform=`translate(${x}px,${y}px) translate(-50%,-100%)`;p.tag.classList.toggle('al',x<CAM.w*.28);p.tag.classList.toggle('ar',x>CAM.w*.72)}}
+  const x=clamp(s[0],44,CAM.w-44),y=clamp(s[1],G.lobby3d?40:CAM.h>CAM.w?118:60,CAM.h);p.tag.style.transform=`translate(${x}px,${y}px) translate(-50%,-100%)`;p.tag.classList.toggle('al',x<CAM.w*.28);p.tag.classList.toggle('ar',x>CAM.w*.72)}}
 function updateMe(){const p=G.players[G.view]||G.players[0],me=$('#me');$('#meName').textContent=YOU(p.i)?ME():p.name;if(updateMe.v!==p.i){updateMe.v=p.i;$('#meAva').innerHTML=avatarSVG(p.i===0?'you':p.persona.mask,p.color)}me.classList.toggle('active',G.actor===G.view&&p.alive);me.classList.toggle('dead',!p.alive);$('#meHands').innerHTML=lifeHTML(p);
   const f=[];if(G.extra[0])f.push('<span class="flag red">✂️ Saboté&nbsp;: 2 actions</span>');if(p.claims)f.push(`<span class="flag">mens. ${p.lies}/${p.claims}</span>`);
-  if(G.spectate)f.push('<span class="flag">Spectateur</span>');else if(!p.alive)f.push('<span class="flag red">Éliminé</span>');$('#meFlags').innerHTML=f.join('');$('#stage').classList.toggle('dead',!p.alive)}
+  if(G.spectate)f.push('<span class="flag">Spectateur</span>');else if(!p.alive)f.push('<span class="flag red">Éliminé</span>');$('#meFlags').innerHTML=f.join('');$('#stage').classList.toggle('dead',!p.alive&&!G.lobby3d)}
 function renderCards(){if(G.game==='liar')return renderLiarCards();const p=G.players[G.view]||G.players[0];const can=canPlayCard();if(G.selCard>=p.cards.length)G.selCard=-1;
   $('#cards').innerHTML=p.cards.map((c,k)=>`<button class="card ${c==='gant'?'passive':''} ${G.selCard===k?'sel':''} ${can&&c!=='gant'?'live':''}" data-k="${k}"><span class="ci">${CARDS[c].icon}</span><span class="cn">${CARDS[c].name}</span></button>`).join('')||'<div class="nocards">Aucune carte en main.</div>';
   const info=$('#cardInfo');if(G.selCard>=0){const c=p.cards[G.selCard];info.innerHTML=`<div><b>${CARDS[c].name}</b> — ${CARDS[c].desc}</div>${c!=='gant'?`<button class="btn sm" id="playCard" ${can?'':'disabled'}>${can?'Jouer':'Pas maintenant'}</button>`:''}`;info.classList.add('show')}
@@ -1389,7 +1404,7 @@ function showEnd(){const w=G.players.find(p=>p.alive);G.score[w.i]=(G.score[w.i]
   const wl=you?'':line(w.i,'win');
   $('#endIn').innerHTML=`<div class="e-k">${you?'Victoire':'Fin de partie'}</div><div class="e-t">${you?'La table est à toi':`${w.name} reste seul${w.persona.mask==='bow'||w.persona.mask==='veil'?'e':''}`}</div>
    <div class="e-s">${you?(w.hands===2?'Tu repars avec tes deux mains. Personne n’y croit.':'Tu repars avec une main. C’est déjà ça.'):(wl?`«&nbsp;${wl}&nbsp;»`:'')}</div>
-   <ol class="rank">${order.map((i,k)=>`<li><span class="n">${k+1}</span>${avatarSVG(i===0?'you':G.players[i].persona.mask,G.players[i].color,'av')}${YOU(i)?ME():G.players[i].name}<span class="rh">${lifeHTML(G.players[i])}</span></li>`).join('')}</ol>
+   <ol class="rank">${order.map((i,k)=>`<li><span class="n">${k+1}</span>${avatarSVG(G.players[i].persona.mask,G.players[i].color,'av')}${YOU(i)?ME():G.players[i].name}<span class="rh">${lifeHTML(G.players[i])}</span></li>`).join('')}</ol>
    ${G.endless?`<div class="sc">${G.players.filter(p=>!p.absent).map(p=>`${YOU(p.i)?ME():p.name}&nbsp;: ${G.score[p.i]||0}`).join(" · ")}</div>`:""}${G.online==='guest'?'<div class="sc">En attente de l’hôte pour la partie suivante…</div>':''}<button class="btn big" id="againBtn" ${G.online==='guest'?'hidden':''}>${G.endless?"Partie suivante":"Rejouer"}</button><button class="btn" id="menuBtn" style="width:100%">Menu</button><div class="t-foot">${G.endless?"La partie suivante démarre toute seule…":"Victoires&nbsp;: "+getWins()}</div>`;
   if(G.endless&&!G.autoplay){const tk=TOKEN;setTimeout(()=>{if(tk===TOKEN&&$("#end").classList.contains("show"))restart()},9000)}
   setTimeout(()=>$('#end').classList.add('show'),G.autoplay?0:1600)}
@@ -1401,8 +1416,8 @@ async function runGame(){try{if(G.game==='liar'){await (G.online==='guest'?runGu
 function resetWorld(){for(const r of RIGS)if(r)SCENE.remove(r.root);RIGS=[];for(const p of PARTS)SCENE.remove(p.n);PARTS.length=0;if(G.device){SCENE.remove(G.device.g);G.device=null}
   genTableCanvas(TEX.table.cv);tableDirty=true}
 function startGame(cfg){TOKEN++;NET.wait={};if(pending){const p=pending;pending=null;try{p.rej(ABORT)}catch(e){}}stopHeart();
-  let ps;if(cfg){G.perm=cfg.perm;G.rule='gun';ps=cfg.players.map((c,i)=>{if(i===0)return{i:0,name:c.name,isHuman:true,remote:!!c.remote,persona:HUMAN_P,color:'#34495a'};const P=PERSONAS[G.perm[i-1]];return{i,name:c.isHuman?c.name:P.name,isHuman:!!c.isHuman,remote:!!c.remote,absent:!!c.absent,persona:c.isHuman?Object.assign({},P,{lines:{}}):P,color:P.color}})}else{
-  const mh=G.humans>1,tot=mh?Math.min(5,G.humans+(G.bots||0)):5,st={2:[0,3],3:[0,1,4],4:[0,1,3,4],5:[0,1,2,3,4]}[tot],hs=[0,...shuffle(st.slice(1)).slice(0,G.humans-1)],hn={};shuffle(hs.map((_,k)=>k+1)).forEach((n,k)=>hn[hs[k]]=n);G.perm=shuffle([0,1,2,3]);G.rule=G.game==='liar'?'gun':(G.ruleSel||G.rule);ps=[{i:0,name:mh?nmOf(hn[0]):'Toi',isHuman:true,persona:HUMAN_P,color:'#34495a'}];[0,1,2,3].forEach(k=>{const P=PERSONAS[G.perm[k]],h=hs.includes(k+1);ps.push({i:k+1,name:h?nmOf(hn[k+1]):P.name,isHuman:h,absent:!st.includes(k+1),persona:h?Object.assign({},P,{lines:{}}):P,color:P.color})})}
+  G.lobby3d=false;document.body.classList.remove('inlobby');let ps;if(cfg){G.perm=cfg.perm;G.animals=cfg.animals||[4,0,1,2,3];G.rule='gun';ps=cfg.players.map((c,i)=>{const P=PERSONAS[G.animals[i]];if(i===0)return{i:0,name:c.name,isHuman:true,remote:!!c.remote,persona:Object.assign({},P,{lines:{}}),color:P.color};return{i,name:c.isHuman?c.name:P.name,isHuman:!!c.isHuman,remote:!!c.remote,absent:!!c.absent,persona:c.isHuman?Object.assign({},P,{lines:{}}):P,color:P.color}})}else{
+  const mh=G.humans>1,tot=mh?Math.min(5,G.humans+(G.bots||0)):5,st={2:[0,3],3:[0,1,4],4:[0,1,3,4],5:[0,1,2,3,4]}[tot],hs=[0,...shuffle(st.slice(1)).slice(0,G.humans-1)],hn={};shuffle(hs.map((_,k)=>k+1)).forEach((n,k)=>hn[hs[k]]=n);G.perm=shuffle([0,1,2,3]);G.rule=G.game==='liar'?'gun':(G.ruleSel||G.rule);G.animals=[G.myAnimal,...shuffle([0,1,2,3,4].filter(a=>a!==G.myAnimal))];const P0=PERSONAS[G.animals[0]];ps=[{i:0,name:mh?nmOf(hn[0]):'Toi',isHuman:true,persona:Object.assign({},P0,{lines:{}}),color:P0.color}];[0,1,2,3].forEach(k=>{const P=PERSONAS[G.animals[k+1]],h=hs.includes(k+1);ps.push({i:k+1,name:h?nmOf(hn[k+1]):P.name,isHuman:h,absent:!st.includes(k+1),persona:h?Object.assign({},P,{lines:{}}):P,color:P.color})})}
   ps.forEach(p=>Object.assign(p,{hands:2,bullet:ri(0,5),shots:0,cards:[],hand:[],alive:!p.absent,grudge:[0,0,0,0,0],claims:0,lies:0}));
   $('#stage').classList.remove('sus');G.sus=0;Object.assign(G,{players:ps,lsel:[],lcan:{},llast:null,view:cfg?cfg.me:0,me:cfg?cfg.me:0,round:0,actor:-1,focus:-1,extra:{},out:[],spectate:false,cardLocked:false,ui:'',logs:[],acting:false,selCard:-1,lastType:null,bag:[],paused:false});G.speed=G.baseSpeed;
   if(gl){resetWorld();for(let i=0;i<5;i++){const r=buildRig(i);r.root.vis=!ps[i].absent;if(G.rule==='gun'&&!ps[i].absent){const g=r.gunN=mkGun();g.p=ps[i].isHuman?[-.52,TABLE_Y+.035,.5]:[-.3,TABLE_Y+.035,.6];g.q=Q.euler(0,.6+rand()*.5,PI/2);r.gunRest={p:g.p.slice(),q:g.q.slice()};r.root.add(g)}RIGS.push(r)}}
@@ -1412,7 +1427,8 @@ function startGame(cfg){TOKEN++;NET.wait={};if(pending){const p=pending;pending=
 function resizeStage(){const st=$('#stage');const w=st.clientWidth||360;const hd=document.querySelector('header');const land=window.innerWidth>window.innerHeight&&window.innerHeight<=560;const h=window.innerHeight;st.style.height=h+'px';
   const d=Math.min(2,window.devicePixelRatio||1);glc.width=Math.round(w*d);glc.height=Math.round(h*d);CAM.w=w;CAM.h=h}
 window.addEventListener('resize',resizeStage);
-function updCam(t,dt){const asp=CAM.w/CAM.h;const fov=clamp(2*Math.atan(Math.tan(29*PI/180)/asp),52*PI/180,94*PI/180);
+function updCam(t,dt){const asp=CAM.w/CAM.h;
+  if(G.lobby3d){const fv=clamp(2*Math.atan(Math.tan(31*PI/180)/asp),50*PI/180,100*PI/180);const pos=[Math.sin(t*.25)*.1,1.75,1.6],tg=[0,.12,-.92];CAM.pos=pos;CAM.view=M4.lookAt(pos,tg,[0,1,0]);CAM.proj=M4.persp(fv,asp,.08,30);M4.mul(CAM.proj,CAM.view,CAM.vp);CAM.sus=0;for(const r of RIGS)if(r){r.fp=false;r.tp=true}return}const fov=clamp(2*Math.atan(Math.tan(29*PI/180)/asp),52*PI/180,94*PI/180);
   const dead=G.players.length>0&&!anyHumanAlive();const mine=G.actor===G.view&&isHm(G.actor)&&!dead;CAM.z=(CAM.z||0)+((mine?1:0)-(CAM.z||0))*(1-Math.exp(-2.5*dt));CAM.dd=(CAM.dd||0)+((dead?1:0)-(CAM.dd||0))*(1-Math.exp(-1.5*dt));
   CAM.shake=Math.max(0,CAM.shake-dt*2.2);const sh=CAM.shake*CAM.shake*.05;
   let pos=[Math.sin(t*.31)*.012+(rand()-.5)*sh,1.62-CAM.z*.05+CAM.dd*.45+Math.sin(t*.5)*.008+(rand()-.5)*sh,2.02-CAM.z*.12+CAM.dd*.5];
@@ -1543,23 +1559,38 @@ function lobbyHTML(){const L=NET.lobby,hst=NET.role==='host',tot=L.length+G.bots
   const items=L.map((p,k)=>`<li>${k===0?'👑':'🙂'} ${p.name.replace(/[<>&]/g,'')}${(hst&&k===0)||(!hst&&p.me)?' (toi)':''}<span class="ok">✓ connecté</span></li>`).join('')+Array.from({length:G.bots},()=>'<li>🤖 Robot</li>').join('');
   return`<div class="e-k">Partie en ligne</div><div class="e-t">Code&nbsp;: <span class="code">${NET.code}</span></div>
     <div class="e-s">${hst?'Donne ce code à tes amis&nbsp;: sur le jeu, ils touchent «&nbsp;Rejoindre une partie&nbsp;» et le tapent.':'Tu es dans la salle d’attente. L’hôte va lancer la partie.'}</div>
+    ${animalPick()}
     <div class="lobrow">Ton pseudo&nbsp;: <input id="lobName" class="nm-in" maxlength="12" autocomplete="off" style="flex:0 1 170px" value="${myName().replace(/["<>&]/g,'')}"></div>
     <ul class="lob">${items}</ul>
     ${hst?`<div class="lobrow"><button class="btn" data-lb="-">−</button>Robots&nbsp;: ${G.bots}<button class="btn" data-lb="+">+</button></div>
       <button class="btn big" id="lobGo" ${tot<2?'disabled':''}>Lancer la partie${tot<2?'<small>attends un ami ou ajoute un robot</small>':''}</button>`:'<div class="e-s">⏳ En attente du lancement…</div>'}
     ${BC?'':`<button class="btn" id="lobMic" style="width:100%;margin-bottom:10px">${micLabel()}</button>`}<button class="btn" id="lobQuit" style="width:100%">Quitter</button>`}
-function drawLobby(){const a=document.activeElement,keep=a&&a.id==='lobName'?{v:a.value,s:a.selectionStart}:null;$('#lobbyIn').innerHTML=lobbyHTML();if(keep){const i=$('#lobName');i.value=keep.v;i.focus();try{i.setSelectionRange(keep.s,keep.s)}catch(e){}}$('#lobby').classList.add('show')}
+function animalPick(){const me=NET.role==='host'?NET.lobby[0]:NET.lobby.find(p=>p.me);const mine=me?me.animal:G.myAnimal;const taken=new Set(NET.lobby.filter(p=>p!==me).map(p=>p.animal));
+  return`<div class="apick">${ANIMALS.map((a,k)=>`<button class="ab ${k===mine?'on':''}" data-an="${k}" ${taken.has(k)?'disabled':''}><span>${a.e}</span>${a.n}</button>`).join('')}</div>`}
+function pickAnimal(k){G.myAnimal=k;document.querySelectorAll('#title .ab').forEach(b=>b.classList.toggle('on',+b.dataset.an===k));if(NET.role==='host'){if(NET.lobby.some((p,j)=>j>0&&p.animal===k))return;NET.lobby[0].animal=k;drawLobby();pushLobby()}else if(NET.role==='guest'&&NET.host)NET.host.send({t:'animal',a:k})}
+function lobby3D(){if(!gl)return;const L=NET.lobby,hum=L.map((p,k)=>({name:p.name,a:p.animal==null?4:p.animal,tag:k===0?'👑 hôte':'✓ prêt',h:true}));const used=new Set(hum.map(x=>x.a)),free=[0,1,2,3,4].filter(a=>!used.has(a));
+  for(let k=0;k<G.bots&&k<free.length;k++)hum.push({name:PERSONAS[free[k]].name,a:free[k],tag:'🤖 robot',h:false});
+  const order=[2,1,3,0,4],slots=[null,null,null,null,null];hum.slice(0,5).forEach((x,k)=>slots[order[k]]=x);
+  if(!G.lobby3d){resetWorld();RIGS=[null,null,null,null,null];G.lobby3d=true;G.lob={};G.actor=-1;G.focus=-1;G.ui='';G.sus=0;G.online=null}
+  G.players=slots.map((x,i)=>{const P=PERSONAS[x?x.a:0];return{i,name:x?x.name:'',alive:!!x,absent:!x,isHuman:x?x.h:false,persona:P,color:P.color,hand:[],cards:[],hands:2,shots:0,bullet:9,claims:0,lies:0,grudge:[0,0,0,0,0],lobTag:x?x.tag:''}});
+  G.animals=slots.map(x=>x?x.a:0);
+  for(let i=0;i<5;i++){const x=slots[i],key=x?String(x.a):'';if(G.lob[i]===key&&(RIGS[i]||!x))continue;if(RIGS[i])SCENE.remove(RIGS[i].root);RIGS[i]=null;G.lob[i]=key;if(!x)continue;
+    const r=buildRig(i);RIGS[i]=r;r.cheerUntil=now()+1500;r.lookCamUntil=now()+2500;puff(V3.add(r.root.p,[0,1.1,0]),14,true);SND.thud()}
+  buildTags();render()}
+function leaveLobby3D(){document.body.classList.remove('inlobby');if(!G.lobby3d)return;G.lobby3d=false;resetWorld();G.players=[];$('#tags').innerHTML=''}
+function drawLobby(){lobby3D();document.body.classList.add('inlobby');$('#lobby').classList.remove('solid');$('#title').classList.remove('show');const a=document.activeElement,keep=a&&a.id==='lobName'?{v:a.value,s:a.selectionStart}:null;$('#lobbyIn').innerHTML=lobbyHTML();if(keep){const i=$('#lobName');i.value=keep.v;i.focus();try{i.setSelectionRange(keep.s,keep.s)}catch(e){}}$('#lobby').classList.add('show')}
 const cleanName=v=>String(v||'').replace(/[^\p{L}\p{N} _\-]/gu,'').slice(0,12).trim();
 function setMyName(v){v=cleanName(v);if(!v)return;G.names[0]=v;document.querySelectorAll('.nm-in[data-k="0"]').forEach(i=>i.value=v);if(NET.role==='host'){NET.lobby[0].name=v;drawLobby();pushLobby()}else if(NET.role==='guest'&&NET.host)NET.host.send({t:'name',name:v})}
-function lobbyMsg(html){$('#lobbyIn').innerHTML=html;$('#lobby').classList.add('show')}
-function pushLobby(){const names=NET.lobby.map(p=>p.name);NET.vids={};if(NET.vpeer)NET.vids[NET.vpeer.id]=1;for(const c of NET.conns)NET.vids[c.id]=1;for(const c of NET.conns)c.send({t:'lobby',names,bots:G.bots,code:NET.code,you:NET.lobby.findIndex(p=>p.conn===c),vids:NET.vids});voiceCallAll()}
+function lobbyMsg(html){$('#lobbyIn').innerHTML=html;$('#lobby').classList.add('show','solid')}
+function pushLobby(){const names=NET.lobby.map(p=>p.name);NET.vids={};if(NET.vpeer)NET.vids[NET.vpeer.id]=1;for(const c of NET.conns)NET.vids[c.id]=1;const animals=NET.lobby.map(p=>p.animal);for(const c of NET.conns)c.send({t:'lobby',names,animals,bots:G.bots,code:NET.code,you:NET.lobby.findIndex(p=>p.conn===c),vids:NET.vids});voiceCallAll()}
 async function createOnline(){SND.init();NET.close();NET.closing=false;G.bots=0;lobbyMsg('<div class="e-t">Connexion…</div><div class="e-s">Création de la partie.</div>');
   let srv=null,code='';for(let k=0;k<4&&!srv;k++){code=Array.from({length:4},()=>'ABCDEFGHJKMNPQRSTUVWXYZ'[ri(0,22)]).join('');try{srv=await hostServer(code)}catch(e){if(e&&e.type!=='unavailable-id')break}}
   if(!srv){lobbyMsg('<div class="e-t">Connexion impossible</div><div class="e-s">Vérifie ta connexion internet et réessaie.</div><button class="btn big" id="lobQuit">Retour</button>');return}
-  Object.assign(NET,{role:'host',srv,code,lobby:[{name:myName(),conn:null}],conns:[]});
+  Object.assign(NET,{role:'host',srv,code,lobby:[{name:myName(),conn:null,animal:G.myAnimal}],conns:[]});
   srv.onConnection(c=>{c.onData(m=>hostMsg(c,m));c.onClose(()=>hostDrop(c))});drawLobby()}
 function hostMsg(c,m){if(!m||typeof m!=='object')return;
-  if(m.t==='join'){if(G.online==='host'||NET.lobby.length>=5){c.send({t:'full'});return}if(NET.conns.includes(c))return;NET.conns.push(c);NET.lobby.push({name:cleanName(m.name)||'Joueur',conn:c});G.bots=Math.min(G.bots,5-NET.lobby.length);SND.chime();drawLobby();pushLobby();return}
+  if(m.t==='join'){if(G.online==='host'||NET.lobby.length>=5){c.send({t:'full'});return}if(NET.conns.includes(c))return;NET.conns.push(c);{const used=new Set(NET.lobby.map(p=>p.animal));const want=Number.isInteger(m.animal)&&m.animal>=0&&m.animal<5&&!used.has(m.animal)?m.animal:[4,0,1,2,3].find(a=>!used.has(a));NET.lobby.push({name:cleanName(m.name)||'Joueur',conn:c,animal:want})}G.bots=Math.min(G.bots,5-NET.lobby.length);SND.chime();drawLobby();pushLobby();return}
+  if(m.t==='animal'){const e=NET.lobby.find(p=>p.conn===c),a=m.a;if(e&&Number.isInteger(a)&&a>=0&&a<5&&!NET.lobby.some(p=>p!==e&&p.animal===a)){e.animal=a;G.bots=Math.min(G.bots,5-NET.lobby.length)}drawLobby();pushLobby();return}
   if(m.t==='name'){const e=NET.lobby.find(p=>p.conn===c),v=cleanName(m.name);if(e&&v){e.name=v;if(G.online==='host'){const st=NET.seatOf[c.id];if(st!=null){G.players[st].name=v;buildTags();render()}}else drawLobby();pushLobby()}return}
   if(m.t==='dec'){const seat=NET.seatOf[c.id],w=NET.wait[seat];if(w&&w.tk===TOKEN){delete NET.wait[seat];w.res(m.dec)}return}
   if(m.t==='fx'){const seat=NET.seatOf[c.id];if(seat==null||m.who!==seat)return;applyFx(m);bc(m)}
@@ -1570,19 +1601,20 @@ function hostDrop(c){if(NET.closing)return;NET.conns=NET.conns.filter(x=>x!==c);
 function hostLaunch(){if(NET.role!=='host')return;const humans=NET.lobby.slice(),tot=Math.min(5,humans.length+G.bots);if(tot<2)return;
   const st={2:[0,3],3:[0,1,4],4:[0,1,3,4],5:[0,1,2,3,4]}[tot],gs=shuffle(st.slice(1));const perm=shuffle([0,1,2,3]);
   const players=[0,1,2,3,4].map(i=>({name:'',isHuman:false,absent:!st.includes(i),remote:false}));players[0]={name:humans[0].name,isHuman:true,remote:false};
-  NET.seatOf={};humans.slice(1).forEach((h,k)=>{const seat=gs[k];players[seat]={name:h.name,isHuman:true,remote:true};NET.seatOf[h.conn.id]=seat});
+  NET.seatOf={};const animals=[humans[0].animal,null,null,null,null];humans.slice(1).forEach((h,k)=>{const seat=gs[k];players[seat]={name:h.name,isHuman:true,remote:true};NET.seatOf[h.conn.id]=seat;animals[seat]=h.animal});
+  {const used=new Set(humans.map(h=>h.animal)),free=[0,1,2,3,4].filter(a=>!used.has(a));for(let i=1;i<5;i++)if(animals[i]==null&&!players[i].absent)animals[i]=free.shift();for(let i=1;i<5;i++)if(animals[i]==null)animals[i]=free.shift()}
   G.online='host';$('#lobby').classList.remove('show');$('#title').classList.remove('show');$('#end').classList.remove('show');
-  for(const h of humans.slice(1))h.conn.send({t:'start',cfg:{perm,players,me:NET.seatOf[h.conn.id]}});
-  startGame({perm,players,me:0})}
+  for(const h of humans.slice(1))h.conn.send({t:'start',cfg:{perm,players,animals,me:NET.seatOf[h.conn.id]}});
+  startGame({perm,players,animals,me:0})}
 function restart(){if(G.online==='host')hostLaunch();else if(!G.online)startGame()}
 async function joinOnline(code){code=(code||'').toUpperCase().replace(/[^A-Z]/g,'');if(code.length!==4){$('.lerr').textContent='Le code fait 4 lettres.';return}
   SND.init();NET.close();NET.closing=false;lobbyMsg('<div class="e-t">Connexion…</div><div class="e-s">Recherche de la partie '+code+'.</div>');
   let c;try{c=await joinServer(code)}catch(e){showJoin(code,e&&e.type==='peer-unavailable'?'Aucune partie avec ce code. Vérifie les lettres.':'Connexion impossible. Vérifie internet et réessaie.');return}
-  Object.assign(NET,{role:'guest',host:c,code,lobby:[]});c.onData(m=>guestMsg(m));c.onClose(()=>{if(NET.closing||NET.role!=='guest')return;NET.close();TOKEN++;$('#end').classList.remove('show');$('#title').classList.add('show');lobbyMsg('<div class="e-t">Connexion perdue</div><div class="e-s">L’hôte a quitté la partie ou la connexion a coupé.</div><button class="btn big" id="lobQuit">OK</button>')});
-  c.send({t:'join',name:myName()})}
+  Object.assign(NET,{role:'guest',host:c,code,lobby:[]});c.onData(m=>guestMsg(m));c.onClose(()=>{if(NET.closing||NET.role!=='guest')return;NET.close();TOKEN++;leaveLobby3D();$('#end').classList.remove('show');$('#title').classList.add('show');lobbyMsg('<div class="e-t">Connexion perdue</div><div class="e-s">L’hôte a quitté la partie ou la connexion a coupé.</div><button class="btn big" id="lobQuit">OK</button>')});
+  c.send({t:'join',name:myName(),animal:G.myAnimal})}
 function guestMsg(m){if(!m||typeof m!=='object')return;
   if(m.t==='full'){NET.close();showJoin(NET.code,'La partie est pleine ou déjà commencée.');return}
-  if(m.t==='lobby'){NET.lobby=m.names.map((n,k)=>({name:n,me:k===m.you}));G.bots=m.bots;NET.vids=m.vids||{};voiceCallAll();if(G.online!=='guest')drawLobby();return}
+  if(m.t==='lobby'){NET.lobby=m.names.map((n,k)=>({name:n,me:k===m.you,animal:(m.animals||[])[k]}));G.bots=m.bots;NET.vids=m.vids||{};voiceCallAll();if(G.online!=='guest')drawLobby();return}
   if(m.t==='start'){NET.q=[];NET.qw=null;G.online='guest';$('#lobby').classList.remove('show');$('#title').classList.remove('show');$('#end').classList.remove('show');startGame(m.cfg);return}
   if(m.t==='fx'){applyFx(m);return}
   if(m.t==='spk'){if(m.who!==G.me)VOICE.spk[m.who]=!!m.on;return}
@@ -1608,7 +1640,8 @@ function showJoin(code,err){lobbyMsg(`<div class="e-k">Rejoindre une partie</div
 $('#onCreate').addEventListener('click',()=>createOnline());
 $('#onJoin').addEventListener('click',()=>showJoin(''));
 $('#lobby').addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;
-  if(t.id==='lobQuit'){NET.close();return}
+  if(t.id==='lobQuit'){NET.close();leaveLobby3D();$('#title').classList.add('show');return}
+  if(t.dataset.an!=null){pickAnimal(+t.dataset.an);return}
   if(t.id==='lobMic'){micToggle().then(()=>{const b=$('#lobMic');if(b)b.innerHTML=micLabel()});return}
   if(t.id==='lobGo'){hostLaunch();return}
   if(t.id==='joinGo'){joinOnline($('#joinCode').value);return}
@@ -1645,7 +1678,7 @@ $('#micBtn').addEventListener('click',()=>micToggle());
 $('#tOpp').innerHTML=PERSONAS.map(P=>`<div>${avatarSVG(P.mask,P.color)}${P.name}</div>`).join('');
 $('#cardsHelp').innerHTML=Object.values(CARDS).map(c=>`<div>${c.icon} <b>${c.name}</b> — ${c.desc}</div>`).join('');
 if(getWins())$('#record').textContent=`Victoires : ${getWins()} · son conseillé`;
-namesUI();resizeStage();
+namesUI();$('#tPick').innerHTML=ANIMALS.map((a,k)=>`<button class="ab ${k===G.myAnimal?'on':''}" data-an="${k}"><span>${a.e}</span>${a.n}</button>`).join('');$('#tPick').addEventListener('click',e=>{const b=e.target.closest('.ab');if(b)pickAnimal(+b.dataset.an)});resizeStage();
 let ok=false;try{ok=glInit();if(ok)initWorld()}catch(e){console.error(e);ok=false}
 if(!ok){$('#nogl').style.display='flex'}
 requestAnimationFrame(frame);
