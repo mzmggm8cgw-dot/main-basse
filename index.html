@@ -69,6 +69,12 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;mar
 @keyframes splat{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}4%{opacity:.95;transform:translate(-50%,-50%) scale(1)}55%{opacity:.8}100%{opacity:0;transform:translate(-50%,-5%) scale(1,1.6)}}
 .pips{display:inline-flex;gap:2px;align-items:center;padding:2px 0}.pips i{width:7px;height:7px;border-radius:50%;background:#d8b25a;box-shadow:0 0 4px rgba(216,178,90,.6)}.pips i.u{background:#2a0c0c;box-shadow:none;border:1px solid #6a2a2a}#meHands .pips i{width:10px;height:10px}
 [hidden]{display:none!important}
+#lobby{background:#070505}
+.code{font-family:'Special Elite',monospace;letter-spacing:8px;color:var(--bone);font-size:46px}
+.lob{list-style:none;padding:0;margin:0 0 14px;text-align:left}.lob li{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid rgba(232,220,192,.12);font-size:16px}.lob li .ok{margin-left:auto;color:#7fd39a;font-size:13px}
+.lobrow{display:flex;align-items:center;justify-content:center;gap:12px;margin:0 0 14px;font-size:15px}.lobrow .btn{min-width:46px;padding:8px}
+#joinCode{width:100%;font:inherit;font-size:34px;letter-spacing:10px;text-align:center;text-transform:uppercase;padding:10px;border-radius:12px;border:1px solid var(--brass);background:rgba(0,0,0,.35);color:var(--bone);margin-bottom:12px;user-select:text;-webkit-user-select:text}
+.lerr{color:#ff8a8a;font-size:13px;min-height:18px;margin-bottom:8px}
 #names{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}.nm-in{flex:1 1 40%;min-width:0;font:inherit;font-size:16px;padding:8px 10px;border-radius:10px;border:1px solid var(--brass);background:rgba(0,0,0,.35);color:var(--bone);user-select:text;-webkit-user-select:text}
 @media (max-width:480px){.logo{font-size:17px;letter-spacing:1px}#roundLbl{display:none}.icbtn{min-width:31px}}
 #log{display:none}
@@ -266,6 +272,7 @@ header{position:absolute;z-index:20;top:max(8px,env(safe-area-inset-top));right:
     <div id="names"></div>
     <div class="opts"><button class="btn" id="nbBtn" hidden>🤖 Robots en plus&nbsp;: 0</button><button class="btn" id="fsTitle">⛶ Plein écran</button><button class="btn" id="infBtn">♾️ Infini&nbsp;: non</button></div>
     <button class="btn big" id="startBtn">S’asseoir à la table</button>
+    <div class="modes" style="margin-top:10px"><button class="btn" id="onCreate">🌐 Créer une partie en ligne<small>tu reçois un code à donner</small></button><button class="btn" id="onJoin">🔑 Rejoindre une partie<small>avec le code d’un ami</small></button></div>
     <div class="t-foot" id="record">Son conseillé · se joue au doigt</div>
   </div>
 </div>
@@ -285,6 +292,7 @@ header{position:absolute;z-index:20;top:max(8px,env(safe-area-inset-top));right:
   </div>
 </div>
 <div id="quit" class="ov"><div class="ov-in"><div class="e-t">Quitter la partie&nbsp;?</div><div class="e-s">La partie en cours sera perdue.</div><button class="btn big" id="quitYes">Quitter</button><button class="btn" id="quitNo" style="width:100%">Continuer à jouer</button></div></div>
+<div id="lobby" class="ov"><div class="ov-in" id="lobbyIn"></div></div>
 <div id="end" class="ov"><div class="ov-in" id="endIn"></div></div>
 
 <script>
@@ -307,7 +315,7 @@ const PI=Math.PI,TAU=PI*2;
 
 /* ================= STATE ================= */
 const G={players:[],round:0,device:null,actor:-1,focus:-1,extra:{},speed:1,baseSpeed:1,out:[],spectate:false,cardLocked:false,ui:'',logs:[],
-  autoplay:false,acting:false,selCard:-1,lastType:null,bag:[],paused:false,forceType:null,names:[],perm:[0,1,2,3],humans:1,view:0,game:'liar',bots:0,endless:false,score:{},lsel:[],lcan:{},llast:null,rule:'gun',noRender:false};
+  autoplay:false,acting:false,selCard:-1,lastType:null,bag:[],paused:false,forceType:null,names:[],online:null,me:0,perm:[0,1,2,3],humans:1,view:0,game:'liar',bots:0,endless:false,score:{},lsel:[],lcan:{},llast:null,rule:'gun',noRender:false};
 let TOKEN=0;const ABORT=new Error('abort');ABORT.abort=true;
 function sleep(ms){const t=TOKEN;return new Promise((res,rej)=>{const go=()=>{if(TOKEN!==t)return rej(ABORT);if(G.paused)return setTimeout(go,150);res()};setTimeout(go,ms/G.speed)})}
 function prog(t0,dur){return clamp((now()-t0)*G.speed/dur,0,1)}
@@ -339,8 +347,8 @@ const HUMAN_P={fear:.3,lie:.5,cruelty:.4,greed:.3,skill:.72,humanBias:0,lines:{}
 const LOC=['à gauche','au milieu','à droite'];
 const LOCN=['de gauche','du milieu','de droite'];
 const isHm=i=>i>=0&&!!G.players[i]&&G.players[i].isHuman;
-const YOU=i=>i===0&&G.humans===1;
-const NM=i=>G.players[i].name;const ME=()=>G.names[0]||'Toi';const nmOf=n=>G.names[n-1]||'Joueur '+n;
+const YOU=i=>G.online?i===G.me:(i===0&&G.humans===1);
+const NM=i=>G.players[i].name;const ME=()=>G.online?NM(G.me):(G.names[0]||'Toi');const nmOf=n=>G.names[n-1]||'Joueur '+n;
 const anyHumanAlive=()=>G.players.some(p=>p.isHuman&&p.alive);
 const CV=['','A','2','3','4','5','6','7','8','9','10','V','D','R'];
 const S=i=>YOU(i)?'Tu':NM(i);
@@ -799,7 +807,7 @@ function rigUpdate(r,dt,t){
     // look
     let tw;const d=G.device;const dev=d?wp(d.g,[0,.18,0]):[0,1,0];
     if(tn<r.lookCamUntil)tw=CAM.pos;else if(r.i===G.actor||G.acting||G.actor<0)tw=(G.actor===r.i||G.acting||!G.players[G.actor])?dev:dev;else tw=rigHeadW(RIGS[G.actor]);
-    if(r.fkN==null)r.fkN=tn+4000+rand()*12000;if(tn>r.fkN&&!G.paused){r.fkN=tn+7000+rand()*15000;if(p.alive&&r.i!==G.actor&&!G.sus&&!r.reachT&&r.deadA<.1&&G.actor>=0&&rand()<.55){const o=G.players.filter(q=>q.alive&&q.i!==r.i);if(o.length){const u=tn+1500+rand()*900,gun=r.gunN&&rand()<.45;r.glT=pick(o).i;r.glU=u;r.glN=u+1500;if(r.glT===0)r.lookCamUntil=u;if(gun)threaten(r.i,r.glT,u-tn);else{r.fuckUntil=u;if(!p.isHuman&&rand()<.35)say(r.i,pick(['Tiens.','Pour toi.','Hé.','…']))}}}}
+    if(r.fkN==null)r.fkN=tn+4000+rand()*12000;if(tn>r.fkN&&!G.paused){r.fkN=tn+7000+rand()*15000;if(p.alive&&!r.fp&&r.i!==G.actor&&!G.sus&&!r.reachT&&r.deadA<.1&&G.actor>=0&&rand()<.55){const o=G.players.filter(q=>q.alive&&q.i!==r.i);if(o.length){const u=tn+1500+rand()*900,gun=r.gunN&&rand()<.45;r.glT=pick(o).i;r.glU=u;r.glN=u+1500;if(r.glT===0)r.lookCamUntil=u;if(gun)threaten(r.i,r.glT,u-tn);else{r.fuckUntil=u;if(!p.isHuman&&rand()<.35)say(r.i,pick(['Tiens.','Pour toi.','Hé.','…']))}}}}
     if(tn>(r.glN||0)){r.glN=tn+2500+rand()*5000;r.glU=tn+700+rand()*900;const o=G.players.filter(q=>q.alive&&q.i!==r.i);r.glT=o.length?pick(o).i:-1}
     if(tn<r.glU&&r.i!==G.actor&&!G.acting&&r.glT>=0&&RIGS[r.glT]&&tn>=r.lookCamUntil)tw=rigHeadW(RIGS[r.glT]);
     if(G.sus&&G.susWho!==r.i&&RIGS[G.susWho])tw=G.susWho===0?V3.add(RIGS[0].root.p,[0,1.3,0]):rigHeadW(RIGS[G.susWho]);
@@ -851,7 +859,7 @@ function rigTagAnchor(r){if(G.players[r.i].alive||r.deadA<.5)return wp(r.face,[0
 
 /* ================= DEVICES ================= */
 function devInit(d){d.g=N();d.born=now();d.ang=G.device?G.device.ang:0;d.pos=[0,0];SCENE.add(d.g);d.build();d.g.add(N(MESH('shd',()=>G_disc(1,24)),M.shadow,[0,.004,0],null,[.66,1,.5]));SCENE.upd(null);return d}
-function devMove(d,dt){const f=G.focus;let tx=0,tz=0,ta=d.ang;if(f!=null&&f>=0&&G.players[f]){const s=SEATS[f],L=Math.hypot(s[0],s[2]);tx=s[0]/L*d.slide;tz=s[2]/L*d.slide;ta=Math.atan2(s[0],s[2])}
+function devMove(d,dt){const f=d.type==='menteur'?G.view:G.focus;let tx=0,tz=0,ta=d.ang;if(f!=null&&f>=0&&G.players[f]){const s=SEATS[f],L=Math.hypot(s[0],s[2]);tx=s[0]/L*d.slide;tz=s[2]/L*d.slide;ta=Math.atan2(s[0],s[2])}
   const k=1-Math.exp(-4.5*dt);d.pos[0]+=(tx-d.pos[0])*k;d.pos[1]+=(tz-d.pos[1])*k;d.ang+=Math.atan2(Math.sin(ta-d.ang),Math.cos(ta-d.ang))*k;
   const pp=clamp((now()-d.born)/650,0,1),off=1.3*(1-pp)*(1-pp)*Math.abs(Math.cos(pp*PI*2.5));d.g.p=[d.pos[0],TABLE_Y+off,d.pos[1]];d.g.r=[0,d.ang,0]}
 function toScreen(w){const m=CAM.vp;const x=m[0]*w[0]+m[4]*w[1]+m[8]*w[2]+m[12],y=m[1]*w[0]+m[5]*w[1]+m[9]*w[2]+m[13],ww=m[3]*w[0]+m[7]*w[1]+m[11]*w[2]+m[15];if(ww<=0)return null;return[(x/ww*.5+.5)*CAM.w,(1-(y/ww*.5+.5))*CAM.h]}
@@ -1188,7 +1196,7 @@ function Menteur(){const sc=cvs(256,128);return devInit({type:'menteur',name:'Le
   reveal(n){this.pile.slice(-n).forEach((c,j)=>{c.from=c.n.p.slice();c.to=[(j-(n-1)/2)*.13,.06,.34];c.t0=now();c.dur=500;c.rev=now()})},
   async prepare(){},risk(){return 0},
   hand:[],hkey:'',
-  syncHand(){const v=G.view,p=G.players[v];if(!p)return;const ok=p.isHuman&&p.alive,show=ok&&(G.humans===1||G.ui==='liar');const key=v+'|'+p.hand.join('')+'|'+show+'|'+ok;if(key===this.hkey)return;this.hkey=key;for(const c of this.hand)this.g.remove(c);this.hand=[];
+  syncHand(){const v=G.view,p=G.players[v];if(!p)return;const ok=p.isHuman&&p.alive,show=ok&&(!!G.online||G.humans===1||G.ui==='liar');const key=v+'|'+p.hand.join('')+'|'+show+'|'+ok;if(key===this.hkey)return;this.hkey=key;for(const c of this.hand)this.g.remove(c);this.hand=[];
     if(ok)p.hand.forEach(k=>{const c=this.mkCard(k,!show);c.s=[1.55,1.55,1.55];this.g.add(c);this.hand.push(c)});this.place(1)},
   place(kk){const n=this.hand.length,q=Q.axis([1,0,0],.7);this.hand.forEach((c,j)=>{const sel=G.ui==='liar'&&G.lsel.includes(j);c.q=q;const tg=[(j-(n-1)/2)*.155,.075+(sel?.07:0),.9-(sel?.07:0)];c.p=kk>=1?tg:V3.lerp(c.p,tg,kk)})},
   syncFans(){for(let i=1;i<5;i++){const r=RIGS[i],p=G.players[i];if(!r||!p)continue;const n=p.alive?p.hand.length:0;if(r.fanC===n)continue;r.fanC=n;if(r.fanN)r.root.remove(r.fanN);r.fanN=null;r.holdT=null;if(!n)continue;
@@ -1196,7 +1204,7 @@ function Menteur(){const sc=cvs(256,128);return devInit({type:'menteur',name:'Le
   update(dt,t){this.syncHand();this.syncFans();this.place(1-Math.exp(-12*dt));for(const c of this.pile){const p=ease(prog(c.t0,c.dur));const q=V3.lerp(c.from,c.to,p);q[1]+=Math.sin(p*PI)*.12;c.n.p=q;
     if(c.rev){const pr=ease(prog(c.rev,500));c.n.r=[0,c.yaw*(1-pr),PI*(1-pr)];const s=1+.35*pr;c.n.s=[s,s,s]}else c.n.r=[0,c.yaw*p,PI]}},
   tap(sx,sy){if(G.ui!=='liar'||!G.lcan.play)return;const k=pickNear(sx,sy,this.hand.map(c=>wp(c)),48);if(k<0)return;const j=G.lsel.indexOf(k);if(j>=0)G.lsel.splice(j,1);else if(G.lsel.length<3)G.lsel.push(k);SND.card();render()},controls(){return''},humanHint(){return''}})}
-function renderLiarCards(){const p=G.players[G.view]||G.players[0];const show=p.isHuman&&(G.humans===1||G.ui==='liar');const hand=p.hand||[];const tc=G.device&&G.device.tc;
+function renderLiarCards(){const p=G.players[G.view]||G.players[0];const show=p.isHuman&&(!!G.online||G.humans===1||G.ui==='liar');const hand=p.hand||[];const tc=G.device&&G.device.tc;
   $('#cards').innerHTML=hand.map((c,k)=>show?`<button class="card ${G.lsel.includes(k)?'sel':''} ${G.ui==='liar'&&G.lcan.play&&(c===tc||c==='J')?'live':''}" data-k="${k}"><span class="ci" style="color:${LK[c][2]}">${LK[c][0]}</span><span class="cn">${LK[c][3]}</span></button>`:'<div class="card back"></div>').join('')||'<div class="nocards">Plus de cartes en main.</div>';$('#cardInfo').classList.remove('show')}
 function liarControls(){if(G.ui==='ready')return`<button class="btn big pulse" data-ready>📱 ${NM(G.view)}&nbsp;: voir mes cartes</button>`;if(G.ui!=='liar')return'';const n=G.lsel.length;
   return(G.lcan.play?`<button class="btn" data-lplay ${n?'':'disabled'}>Poser ${n||''} carte${n>1?'s':''}<small>${n?'«&nbsp;'+claimTxt(n,G.device.tc)+'&nbsp;»':'touche tes cartes sur la table'}</small></button>`:'')+(G.lcan.call?`<button class="btn lie" data-lcall>MENTEUR&nbsp;!<small>${G.lcan.play||G.lcan.next?'je ne te crois pas':'obligé&nbsp;: tu es le dernier'}</small></button>`:'')+(G.lcan.next?'<button class="btn" data-lnext>Nouvelle manche<small>je te crois</small></button>':'')}
@@ -1209,31 +1217,32 @@ async function liarBot(i,last,forced,d,fin){await sleep(700+rand()*800);const p=
   if(fin)return{next:true};
   if(good.length===0||(bad.length>0&&rand()<P.lie*.6))return{cards:shuffle(bad.slice()).slice(0,Math.min(bad.length,rand()<.65?1:2))};
   return{cards:good.slice(0,Math.min(good.length,rand()<.6?1:rand()<.8?2:3))}}
-async function liarHuman(i,last,forced,fin){if(G.autoplay)return liarBot(i,last,fin?false:forced,G.device,fin);G.view=i;G.focus=i;G.llast=last;if(G.humans>1){G.ui='ready';await waitInput('ready')}
+async function liarHuman(i,last,forced,fin){if(G.online==='host'&&G.players[i].remote){G.llast=last;render();const tk=TOKEN;const dec=await new Promise(res=>{NET.wait[i]={res,tk}});return okDec(G.players[i],dec,last,forced,fin)||await liarBot(i,last,forced,G.device,fin)}
+  if(G.autoplay)return liarBot(i,last,fin?false:forced,G.device,fin);if(!G.online){G.view=i;G.focus=i}G.llast=last;if(G.humans>1&&!G.online){G.ui='ready';await waitInput('ready')}
   G.lsel=[];G.lcan={call:!!last,play:!forced,next:!!fin};G.ui='liar';const inp=await waitInput('liar');G.ui='';G.lsel=[];render();return inp}
 async function runLiar(){const d=G.device=Menteur();setTimeout(()=>{SND.thud();CAM.shake=Math.max(CAM.shake,.3)},140);G.focus=-1;let starter=pick(G.players.filter(p=>p.alive)).i;G.round=1;render();await showIntro(d);G.round=0;
-  while(aliveCount()>1){G.round++;d.clear();const deck=shuffle([...'RRRRRRDDDDDDAAAAAAJJ']);G.players.forEach(p=>{p.hand=p.alive?deck.splice(0,5):[]});d.setTable(pick(['R','D','A']));SND.card();G.actor=-1;G.llast=null;render();toast(`Manche ${G.round} — table&nbsp;: ${LK[d.tc][1]}`,1600);await sleep(1500);
+  while(aliveCount()>1){G.round++;d.clear();const deck=shuffle([...'RRRRRRDDDDDDAAAAAAJJ']);G.players.forEach(p=>{p.hand=p.alive?deck.splice(0,5):[]});d.setTable(pick(['R','D','A']));bc({t:'round',round:G.round,tc:d.tc,hands:G.players.map(p=>p.hand.slice())});SND.card();G.actor=-1;G.llast=null;render();toast(`Manche ${G.round} — table&nbsp;: ${LK[d.tc][1]}`,1600);await sleep(1500);
     let cur=starter,last=null,stopAt=-1;
     const adv=c=>{for(let k=1;k<=5;k++){const j=(c+k)%5;if(j===stopAt)return -1;const q=G.players[j];if(q.alive&&q.hand.length)return j}return -1};
     if(!G.players[cur].alive||!G.players[cur].hand.length)cur=adv(cur);
     while(cur>=0&&aliveCount()>1){const P=G.players[cur];if(last&&last.who===cur)last=null;G.actor=cur;render();
-      const withC=G.players.filter(p=>p.alive&&p.hand.length);const forced=!!last&&withC.length===1&&stopAt<0;
+      const withC=G.players.filter(p=>p.alive&&p.hand.length);const forced=!!last&&withC.length===1&&stopAt<0;bc({t:'turn',a:cur,forced,fin:false,last:last?{who:last.who,n:last.cards.length}:null});
       const dec=P.isHuman?await liarHuman(cur,last,forced):await liarBot(cur,last,forced,d);
-      if(dec.call&&last){const shot=await liarCall(cur,last,d);
-        await liarShot(shot);if(aliveCount()<=1)break;d.clear();last=null;G.llast=null;
+      if(dec.call&&last){bc({t:'call',who:cur});const shot=await liarCall(cur,last,d);
+        await liarShot(shot);if(aliveCount()<=1)break;d.clear();bc({t:'clear'});last=null;G.llast=null;
         cur=stopAt>=0?adv(cur):adv(shot);continue}
-      const cs=(dec.cards||[0]).slice().sort((a,b)=>b-a).map(k=>P.hand.splice(k,1)[0]);G.acting=true;render();rigReach(RIGS[cur],()=>wp(d.g,[0,.08,.1]));await sleep(380);d.playCards(cur,cs);SND.card();SND.slide();
+      const cs=(dec.cards||[0]).slice().sort((a,b)=>b-a).map(k=>P.hand.splice(k,1)[0]);bc({t:'play',who:cur,cards:cs});G.acting=true;render();rigReach(RIGS[cur],()=>wp(d.g,[0,.08,.1]));await sleep(380);d.playCards(cur,cs);SND.card();SND.slide();
       if(P.isHuman)toast(`${YOU(cur)?ME():P.name}&nbsp;: «&nbsp;${claimTxt(cs.length,d.tc)}&nbsp;»`,1300);else say(cur,claimTxt(cs.length,d.tc));await sleep(700);rigRelease(RIGS[cur]);G.acting=false;last={who:cur,cards:cs};render();await sleep(450);
-      if(!P.hand.length&&stopAt<0){stopAt=cur;SND.bell();toast(`${S(cur)} ${V(cur,'a','as')} vidé sa main — dernier tour&nbsp;!`,1900);await sleep(1500)}
+      if(!P.hand.length&&stopAt<0){stopAt=cur;bc({t:'lastlap',who:cur});SND.bell();toast(`${S(cur)} ${V(cur,'a','as')} vidé sa main — dernier tour&nbsp;!`,1900);await sleep(1500)}
       cur=adv(cur)}
-    if(aliveCount()>1&&stopAt>=0&&last&&last.who!==stopAt&&G.players[stopAt].alive){const f=stopAt,P=G.players[f];G.actor=f;render();
+    if(aliveCount()>1&&stopAt>=0&&last&&last.who!==stopAt&&G.players[stopAt].alive){const f=stopAt,P=G.players[f];G.actor=f;render();bc({t:'turn',a:f,forced:true,fin:true,last:{who:last.who,n:last.cards.length}});
       const dec=P.isHuman?await liarHuman(f,last,true,true):await liarBot(f,last,false,d,true);
-      if(dec.call){const shot=await liarCall(f,last,d);await liarShot(shot)}}
+      if(dec.call){bc({t:'call',who:f});const shot=await liarCall(f,last,d);await liarShot(shot)}}
     if(aliveCount()<=1)break;
-    toast('Fin de la manche',1200);await sleep(1100);starter=nextAlive(stopAt>=0?stopAt:starter)}}
+    bc({t:'roundEnd'});toast('Fin de la manche',1200);await sleep(1100);starter=nextAlive(stopAt>=0?stopAt:starter)}}
 async function liarCall(cur,last,d){const P=G.players[cur];G.acting=true;render();stamp('MENTEUR !',true);SND.wrong();if(!P.isHuman)say(cur,'Menteur !');gesture(cur,last.who,1300);{const r=RIGS[cur];if(r){r.fuckUntil=now()+1900/Math.max(1,G.speed*.7);r.glT=last.who;r.glU=r.fuckUntil}}await sleep(1200);d.reveal(last.cards.length);SND.card();await sleep(1200);
   const lied=last.cards.some(c=>c!==d.tc&&c!=='J');const Lp=G.players[last.who];Lp.claims++;if(lied)Lp.lies++;stamp(lied?'MENSONGE':'VÉRITÉ',lied);if(lied)SND.sting();else SND.chime();await sleep(1600);G.acting=false;return lied?last.who:cur}
-async function liarShot(shot){G.actor=shot;render();toast(`🔫 ${YOU(shot)?'À TOI DE TIRER':NM(shot).toUpperCase()}`,1300);if(!G.players[shot].isHuman)say(shot,line(shot,'scared'));await sleep(900);
+async function liarShot(shot){bc({t:'shot',who:shot,bang:G.players[shot].shots===G.players[shot].bullet});G.actor=shot;render();toast(`🔫 ${YOU(shot)?'À TOI DE TIRER':NM(shot).toUpperCase()}`,1300);if(!G.players[shot].isHuman)say(shot,line(shot,'scared'));await sleep(900);
   if(await gunTrial(shot)){await kill(shot);if(aliveCount()<=1)return;
     if(!anyHumanAlive()&&!G.spectate){const ch=G.autoplay?'watch':await showDefeatMid();if(ch==='watch'){G.spectate=true;G.speed=Math.max(2.6,G.speed);render()}}}
   else{if(!G.players[shot].isHuman&&rand()<.6)say(shot,line(shot,'safe'));await sleep(600)}}
@@ -1345,7 +1354,7 @@ const gi=p.cards.indexOf('gant');
   render();await sleep(1700);
   if(p.hands<=0){p.alive=false;G.out.push(v);SND.sting();log(`${B(S(v))} ${V(v,'quitte','quittes')} la table.`);toast(YOU(v)?'TU QUITTES LA TABLE':`${p.name.toUpperCase()} QUITTE LA TABLE`,1800);render();await sleep(1800)}}
 async function showIntro(d){const el=$('#intro');el.innerHTML=`<div class="in-k">Manche ${G.round}</div><div class="in-n">${d.name}</div><div class="in-r">${d.rule}</div><div class="in-t">touche pour commencer</div>`;
-  el.classList.add('show');SND.intro();if(G.autoplay||G.spectate||!anyHumanAlive())await sleep(1600);else await waitIntro(12000);el.classList.remove('show');await sleep(300)}
+  el.classList.add('show');SND.intro();if(G.online)await sleep(2400);else if(G.autoplay||G.spectate||!anyHumanAlive())await sleep(1600);else await waitIntro(12000);el.classList.remove('show');await sleep(300)}
 async function playRound(starter){G.round++;G.extra={};G.actor=-1;G.focus=-1;
   if(G.device){SCENE.remove(G.device.g)}G.device=FACT[nextDeviceType()]();setTimeout(()=>{SND.thud();CAM.shake=Math.max(CAM.shake,.3)},140);
   if(G.round>1)G.players.forEach(p=>{if(p.alive)giveCard(p.i)});render();await showIntro(G.device);
@@ -1361,20 +1370,21 @@ function showEnd(){const w=G.players.find(p=>p.alive);G.score[w.i]=(G.score[w.i]
   $('#endIn').innerHTML=`<div class="e-k">${you?'Victoire':'Fin de partie'}</div><div class="e-t">${you?'La table est à toi':`${w.name} reste seul${w.persona.mask==='bow'||w.persona.mask==='veil'?'e':''}`}</div>
    <div class="e-s">${you?(w.hands===2?'Tu repars avec tes deux mains. Personne n’y croit.':'Tu repars avec une main. C’est déjà ça.'):(wl?`«&nbsp;${wl}&nbsp;»`:'')}</div>
    <ol class="rank">${order.map((i,k)=>`<li><span class="n">${k+1}</span>${avatarSVG(i===0?'you':G.players[i].persona.mask,G.players[i].color,'av')}${YOU(i)?ME():G.players[i].name}<span class="rh">${lifeHTML(G.players[i])}</span></li>`).join('')}</ol>
-   ${G.endless?`<div class="sc">${G.players.filter(p=>!p.absent).map(p=>`${YOU(p.i)?ME():p.name}&nbsp;: ${G.score[p.i]||0}`).join(" · ")}</div>`:""}<button class="btn big" id="againBtn">${G.endless?"Partie suivante":"Rejouer"}</button><button class="btn" id="menuBtn" style="width:100%">Menu</button><div class="t-foot">${G.endless?"La partie suivante démarre toute seule…":"Victoires&nbsp;: "+getWins()}</div>`;
-  if(G.endless&&!G.autoplay){const tk=TOKEN;setTimeout(()=>{if(tk===TOKEN&&$("#end").classList.contains("show"))startGame()},9000)}
+   ${G.endless?`<div class="sc">${G.players.filter(p=>!p.absent).map(p=>`${YOU(p.i)?ME():p.name}&nbsp;: ${G.score[p.i]||0}`).join(" · ")}</div>`:""}${G.online==='guest'?'<div class="sc">En attente de l’hôte pour la partie suivante…</div>':''}<button class="btn big" id="againBtn" ${G.online==='guest'?'hidden':''}>${G.endless?"Partie suivante":"Rejouer"}</button><button class="btn" id="menuBtn" style="width:100%">Menu</button><div class="t-foot">${G.endless?"La partie suivante démarre toute seule…":"Victoires&nbsp;: "+getWins()}</div>`;
+  if(G.endless&&!G.autoplay){const tk=TOKEN;setTimeout(()=>{if(tk===TOKEN&&$("#end").classList.contains("show"))restart()},9000)}
   setTimeout(()=>$('#end').classList.add('show'),G.autoplay?0:1600)}
-async function runGame(){try{if(G.game==='liar'){await runLiar()}else{let starter=pick(G.players.filter(p=>p.alive)).i;
+async function runGame(){try{if(G.game==='liar'){await (G.online==='guest'?runGuest():runLiar())}else{let starter=pick(G.players.filter(p=>p.alive)).i;
   while(aliveCount()>1){const v=await playRound(starter);if(aliveCount()<=1)break;
     if(!anyHumanAlive()&&!G.spectate){const ch=G.autoplay?'watch':await showDefeatMid();if(ch==='watch'){G.spectate=true;G.speed=Math.max(2.6,G.speed);render()}}
     starter=nextAlive(v)}}
-  G.actor=-1;G.focus=-1;render();showEnd()}catch(e){if(!(e&&e.abort))console.error(e)}}
+  G.actor=-1;G.focus=-1;bc({t:'end'});render();showEnd()}catch(e){if(!(e&&e.abort))console.error(e)}}
 function resetWorld(){for(const r of RIGS)if(r)SCENE.remove(r.root);RIGS=[];for(const p of PARTS)SCENE.remove(p.n);PARTS.length=0;if(G.device){SCENE.remove(G.device.g);G.device=null}
   genTableCanvas(TEX.table.cv);tableDirty=true}
-function startGame(){TOKEN++;if(pending){const p=pending;pending=null;try{p.rej(ABORT)}catch(e){}}stopHeart();
-  const mh=G.humans>1,tot=mh?Math.min(5,G.humans+(G.bots||0)):5,st={2:[0,3],3:[0,1,4],4:[0,1,3,4],5:[0,1,2,3,4]}[tot],hs=[0,...shuffle(st.slice(1)).slice(0,G.humans-1)],hn={};shuffle(hs.map((_,k)=>k+1)).forEach((n,k)=>hn[hs[k]]=n);G.perm=shuffle([0,1,2,3]);G.rule=G.game==='liar'?'gun':(G.ruleSel||G.rule);const ps=[{i:0,name:mh?nmOf(hn[0]):'Toi',isHuman:true,persona:HUMAN_P,color:'#34495a'}];[0,1,2,3].forEach(k=>{const P=PERSONAS[G.perm[k]],h=hs.includes(k+1);ps.push({i:k+1,name:h?nmOf(hn[k+1]):P.name,isHuman:h,absent:!st.includes(k+1),persona:h?Object.assign({},P,{lines:{}}):P,color:P.color})});
+function startGame(cfg){TOKEN++;NET.wait={};if(pending){const p=pending;pending=null;try{p.rej(ABORT)}catch(e){}}stopHeart();
+  let ps;if(cfg){G.perm=cfg.perm;G.rule='gun';ps=cfg.players.map((c,i)=>{if(i===0)return{i:0,name:c.name,isHuman:true,remote:!!c.remote,persona:HUMAN_P,color:'#34495a'};const P=PERSONAS[G.perm[i-1]];return{i,name:c.isHuman?c.name:P.name,isHuman:!!c.isHuman,remote:!!c.remote,absent:!!c.absent,persona:c.isHuman?Object.assign({},P,{lines:{}}):P,color:P.color}})}else{
+  const mh=G.humans>1,tot=mh?Math.min(5,G.humans+(G.bots||0)):5,st={2:[0,3],3:[0,1,4],4:[0,1,3,4],5:[0,1,2,3,4]}[tot],hs=[0,...shuffle(st.slice(1)).slice(0,G.humans-1)],hn={};shuffle(hs.map((_,k)=>k+1)).forEach((n,k)=>hn[hs[k]]=n);G.perm=shuffle([0,1,2,3]);G.rule=G.game==='liar'?'gun':(G.ruleSel||G.rule);ps=[{i:0,name:mh?nmOf(hn[0]):'Toi',isHuman:true,persona:HUMAN_P,color:'#34495a'}];[0,1,2,3].forEach(k=>{const P=PERSONAS[G.perm[k]],h=hs.includes(k+1);ps.push({i:k+1,name:h?nmOf(hn[k+1]):P.name,isHuman:h,absent:!st.includes(k+1),persona:h?Object.assign({},P,{lines:{}}):P,color:P.color})})}
   ps.forEach(p=>Object.assign(p,{hands:2,bullet:ri(0,5),shots:0,cards:[],hand:[],alive:!p.absent,grudge:[0,0,0,0,0],claims:0,lies:0}));
-  $('#stage').classList.remove('sus');G.sus=0;Object.assign(G,{players:ps,lsel:[],lcan:{},llast:null,view:0,round:0,actor:-1,focus:-1,extra:{},out:[],spectate:false,cardLocked:false,ui:'',logs:[],acting:false,selCard:-1,lastType:null,bag:[],paused:false});G.speed=G.baseSpeed;
+  $('#stage').classList.remove('sus');G.sus=0;Object.assign(G,{players:ps,lsel:[],lcan:{},llast:null,view:cfg?cfg.me:0,me:cfg?cfg.me:0,round:0,actor:-1,focus:-1,extra:{},out:[],spectate:false,cardLocked:false,ui:'',logs:[],acting:false,selCard:-1,lastType:null,bag:[],paused:false});G.speed=G.baseSpeed;
   if(gl){resetWorld();for(let i=0;i<5;i++){const r=buildRig(i);r.root.vis=!ps[i].absent;if(G.rule==='gun'&&!ps[i].absent){const g=r.gunN=mkGun();g.p=ps[i].isHuman?[-.52,TABLE_Y+.035,.5]:[-.3,TABLE_Y+.035,.6];g.q=Q.euler(0,.6+rand()*.5,PI/2);r.gunRest={p:g.p.slice(),q:g.q.slice()};r.root.add(g)}RIGS.push(r)}}
   buildTags();if(G.game!=='liar')G.players.forEach(p=>{if(p.alive){giveCard(p.i);giveCard(p.i)}});$('#log').innerHTML='';$('#end').classList.remove('show');$('#intro').classList.remove('show');render();runGame()}
 
@@ -1383,7 +1393,7 @@ function resizeStage(){const st=$('#stage');const w=st.clientWidth||360;const hd
   const d=Math.min(2,window.devicePixelRatio||1);glc.width=Math.round(w*d);glc.height=Math.round(h*d);CAM.w=w;CAM.h=h}
 window.addEventListener('resize',resizeStage);
 function updCam(t,dt){const asp=CAM.w/CAM.h;const fov=clamp(2*Math.atan(Math.tan(29*PI/180)/asp),52*PI/180,94*PI/180);
-  const dead=G.players.length>0&&!anyHumanAlive();const mine=isHm(G.actor)&&!dead;CAM.z=(CAM.z||0)+((mine?1:0)-(CAM.z||0))*(1-Math.exp(-2.5*dt));CAM.dd=(CAM.dd||0)+((dead?1:0)-(CAM.dd||0))*(1-Math.exp(-1.5*dt));
+  const dead=G.players.length>0&&!anyHumanAlive();const mine=G.actor===G.view&&isHm(G.actor)&&!dead;CAM.z=(CAM.z||0)+((mine?1:0)-(CAM.z||0))*(1-Math.exp(-2.5*dt));CAM.dd=(CAM.dd||0)+((dead?1:0)-(CAM.dd||0))*(1-Math.exp(-1.5*dt));
   CAM.shake=Math.max(0,CAM.shake-dt*2.2);const sh=CAM.shake*CAM.shake*.05;
   let pos=[Math.sin(t*.31)*.012+(rand()-.5)*sh,1.62-CAM.z*.05+CAM.dd*.45+Math.sin(t*.5)*.008+(rand()-.5)*sh,2.02-CAM.z*.12+CAM.dd*.5];
   let tg=[0,.9,-.2];{const v=G.players[G.view]&&G.players[G.view].isHuman?G.view:0;CAM.seat=v;const pt=Math.atan2(SEATS[v][0],SEATS[v][2]);if(CAM.phi==null)CAM.phi=pt;const df=Math.atan2(Math.sin(pt-CAM.phi),Math.cos(pt-CAM.phi));CAM.phi+=clamp(df*(1-Math.exp(-3.2*dt)),-1.5*dt,1.5*dt);CAM.arr=Math.abs(df)<.22}
@@ -1452,8 +1462,8 @@ $('#cardInfo').addEventListener('click',e=>{if(e.target.id==='playCard'&&canPlay
 document.querySelectorAll('.rule').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.rule').forEach(x=>x.classList.toggle('on',x===b));G.rule=G.ruleSel=b.dataset.r}));
 document.querySelectorAll('.mode').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.mode').forEach(x=>x.classList.toggle('on',x===b));const m=+b.dataset.h;$('#hc').hidden=m<2;$('#nbBtn').hidden=m<2;G.humans=m<2?1:+($('#hc .on').dataset.n);nbUpd()}));
 document.querySelectorAll('#hc .btn').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#hc .btn').forEach(x=>x.classList.toggle('on',x===b));G.humans=+b.dataset.n;nbUpd()}));
-$('#aimBtn').addEventListener('click',()=>{const v=G.view,r=RIGS[v],p=G.players[v];if(!r||!p||!p.alive||!r.gunN||G.sus)return;const o=G.players.filter(q=>q.alive&&q.i!==v);if(!o.length)return;const tg=(G.actor>=0&&G.actor!==v&&G.players[G.actor].alive)?G.actor:pick(o).i;threaten(v,tg,2200)});
-$('#fkBtn').addEventListener('click',()=>{const v=G.view,r=RIGS[v],p=G.players[v];if(!r||!p||!p.alive)return;r.fuckUntil=now()+1900;SND.card();const bots=G.players.filter(q=>q.alive&&!q.isHuman);if(!bots.length)return;
+$('#aimBtn').addEventListener('click',()=>{const v=G.view,r=RIGS[v],p=G.players[v];if(!r||!p||!p.alive||!r.gunN||G.sus)return;const o=G.players.filter(q=>q.alive&&q.i!==v);if(!o.length)return;const tg=(G.actor>=0&&G.actor!==v&&G.players[G.actor].alive)?G.actor:pick(o).i;threaten(v,tg,2200);netFx('aim',v,tg)});
+$('#fkBtn').addEventListener('click',()=>{const v=G.view,r=RIGS[v],p=G.players[v];if(!r||!p||!p.alive)return;r.fuckUntil=now()+1900;SND.card();netFx('fk',v,-1);const bots=G.players.filter(q=>q.alive&&!q.isHuman);if(!bots.length)return;
   const tg=(G.actor>0&&!isHm(G.actor)&&G.players[G.actor].alive)?G.players[G.actor]:pick(bots);tg.grudge[v]+=.5;const rr=RIGS[tg.i];rr.lookCamUntil=now()+1800;log(`${B(S(v))} ${V(v,'fait','fais')} un doigt d’honneur à ${B(tg.name)}.`);
   const tk=TOKEN;setTimeout(()=>{if(tk!==TOKEN)return;say(tg.i,pick(['Malpoli.','Oh !','Tu vas le regretter.','Charmant.','…']));if(rand()<.45)rr.fuckUntil=now()+1600},500)});
 document.querySelectorAll('.gsel').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.gsel').forEach(x=>x.classList.toggle('on',x===b));G.game=b.dataset.g;$('#ruleRow').hidden=G.game==='liar'}));
@@ -1463,7 +1473,7 @@ const nbUpd=()=>{namesUI();G.bots=Math.min(G.bots,5-G.humans);$('#nbBtn').innerH
 $('#nbBtn').addEventListener('click',()=>{G.bots=(G.bots+1)%(5-G.humans+1);nbUpd()});
 $('#infBtn').addEventListener('click',()=>{G.endless=!G.endless;$('#infBtn').innerHTML='♾️ Infini&nbsp;: '+(G.endless?'oui':'non')});
 $('#startBtn').addEventListener('click',()=>{G.score={};SND.init();$('#title').classList.remove('show');startGame()});
-$('#end').addEventListener('click',e=>{if(e.target.id==='watchBtn'){$('#end').classList.remove('show');giveInput('defeat','watch')}else if(e.target.id==='menuBtn'){TOKEN++;if(pending){const p=pending;pending=null;try{p.rej(ABORT)}catch(_){}}$('#end').classList.remove('show');$('#title').classList.add('show')}else if(e.target.id==='againBtn'){SND.init();$('#end').classList.remove('show');startGame()}});
+$('#end').addEventListener('click',e=>{if(e.target.id==='watchBtn'){$('#end').classList.remove('show');giveInput('defeat','watch')}else if(e.target.id==='menuBtn'){NET.close();TOKEN++;if(pending){const p=pending;pending=null;try{p.rej(ABORT)}catch(_){}}$('#end').classList.remove('show');$('#title').classList.add('show')}else if(e.target.id==='againBtn'){SND.init();$('#end').classList.remove('show');restart()}});
 $('#sndBtn').addEventListener('click',()=>{SND.init();SND.setOn(!SND.on);$('#sndBtn').textContent=SND.on?'🔊':'🔇'});
 $('#spdBtn').addEventListener('click',()=>{G.baseSpeed=G.baseSpeed===1?2:1;if(!G.spectate)G.speed=G.baseSpeed;$('#spdBtn').textContent='×'+G.baseSpeed});
 function goFS(){const el=document.documentElement;try{if(document.fullscreenElement||document.webkitFullscreenElement){(document.exitFullscreen||document.webkitExitFullscreen).call(document);return true}
@@ -1473,12 +1483,110 @@ $('#fsBtn').addEventListener('click',()=>{if(!goFS())toast(FSMSG.replace(' : ','
 $('#fsTitle').addEventListener('click',()=>{if(!goFS())$('#record').textContent=FSMSG});
 $('#quitBtn').addEventListener('click',()=>{if($('#title').classList.contains('show'))return;G.paused=true;$('#quit').classList.add('show')});
 $('#quitNo').addEventListener('click',()=>{G.paused=false;$('#quit').classList.remove('show')});
-$('#quitYes').addEventListener('click',()=>{TOKEN++;if(pending){const p=pending;pending=null;try{p.rej(ABORT)}catch(e){}}stopHeart();G.paused=false;G.sus=0;G.dim=0;G.ui='';G.actor=-1;GS.T=null;if(GUN)GUN.vis=false;SND.hush(0);
+$('#quitYes').addEventListener('click',()=>{NET.close();TOKEN++;if(pending){const p=pending;pending=null;try{p.rej(ABORT)}catch(e){}}stopHeart();G.paused=false;G.sus=0;G.dim=0;G.ui='';G.actor=-1;GS.T=null;if(GUN)GUN.vis=false;SND.hush(0);
   $('#stage').classList.remove('sus');['#quit','#end','#intro'].forEach(q=>$(q).classList.remove('show'));$('#controls').innerHTML='';$('#hint').innerHTML='';$('#title').classList.add('show')});
 if(!(document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen)){$('#fsBtn').hidden=true;$('#fsTitle').hidden=true}
 $('#helpBtn').addEventListener('click',()=>{G.paused=true;$('#help').classList.add('show')});
 $('#helpClose').addEventListener('click',()=>{G.paused=false;$('#help').classList.remove('show')});
 document.addEventListener('visibilitychange',()=>{if(!SND.c)return;try{document.hidden?SND.c.suspend():SND.c.resume()}catch(e){}});
+
+
+/* ================= EN LIGNE ================= */
+const NET={role:null,srv:null,peer:null,conns:[],seatOf:{},wait:{},q:[],qw:null,code:'',lobby:[],host:null,closing:false,
+  close(){this.closing=true;try{for(const c of this.conns)c.close()}catch(e){}try{this.host&&this.host.close()}catch(e){}try{this.srv&&this.srv.destroy()}catch(e){}try{this.peer&&this.peer.destroy()}catch(e){}
+    Object.assign(this,{role:null,srv:null,peer:null,conns:[],seatOf:{},wait:{},q:[],qw:null,code:'',lobby:[],host:null});G.online=null;$('#lobby').classList.remove('show');setTimeout(()=>this.closing=false,300)}};
+const BC=location.hash==='#bc';
+function bc(m){if(G.online!=='host')return;for(const c of NET.conns)c.send(m)}
+function netFx(k,who,tg){const m={t:'fx',k,who,tg};if(G.online==='host')bc(m);else if(G.online==='guest'&&NET.host)NET.host.send(m)}
+function applyFx(m){const r=RIGS[m.who];if(!r||!G.players[m.who]||!G.players[m.who].alive)return;if(m.k==='fk'){r.fuckUntil=now()+1900}else if(m.k==='aim'&&G.players[m.tg]&&G.players[m.tg].alive)threaten(m.who,m.tg,2200)}
+function okDec(p,dec,last,forced,fin){if(!dec||typeof dec!=='object')return null;if(dec.call&&last)return{call:true};if(dec.next&&fin)return{next:true};
+  if(Array.isArray(dec.cards)&&!forced&&!fin){const c=[...new Set(dec.cards)].filter(k=>Number.isInteger(k)&&k>=0&&k<p.hand.length);if(c.length>=1&&c.length<=3)return{cards:c}}return null}
+function loadPeer(){return new Promise((res,rej)=>{if(window.Peer)return res();const urls=['https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js','https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js'];let k=0;
+  const nx=()=>{if(k>=urls.length)return rej(new Error('lib'));const sc=document.createElement('script');sc.src=urls[k++];sc.onload=()=>window.Peer?res():nx();sc.onerror=nx;document.head.appendChild(sc)};nx()})}
+function wrapPJ(c){return{id:c.peer,send(d){try{if(c.open)c.send(d)}catch(e){}},onData(f){c.on('data',f)},onClose(f){c.on('close',f);c.on('error',f)},close(){try{c.close()}catch(e){}}}}
+const PID=code=>'mainbasse-v1-'+code.toLowerCase();
+async function hostServer(code){
+  if(BC){const ch=new BroadcastChannel('mb-'+code),cs={};let onc=null;ch.onmessage=e=>{const m=e.data;if(m.to!=='host')return;
+      if(m.hello){const c={id:m.from,h:[],x:[],send(d){ch.postMessage({to:m.from,d})},onData(f){this.h.push(f)},onClose(f){this.x.push(f)},close(){ch.postMessage({to:m.from,bye:1})}};cs[m.from]=c;onc&&onc(c);ch.postMessage({to:m.from,ok:1});return}
+      const c=cs[m.from];if(!c)return;if(m.bye){c.x.forEach(f=>f());delete cs[m.from];return}c.h.forEach(f=>f(m.d))};
+    return{onConnection(f){onc=f},destroy(){ch.close()}}}
+  await loadPeer();const p=await new Promise((res,rej)=>{const p=new window.Peer(PID(code),{debug:0});const t=setTimeout(()=>rej({type:'timeout'}),15000);p.on('open',()=>{clearTimeout(t);res(p)});p.on('error',e=>{clearTimeout(t);rej(e)})});
+  return{onConnection(f){p.on('connection',c=>{c.on('open',()=>f(wrapPJ(c)))})},destroy(){p.destroy()}}}
+async function joinServer(code){
+  if(BC){const me='g'+Math.random().toString(36).slice(2,8),ch=new BroadcastChannel('mb-'+code);return new Promise((res,rej)=>{const h=[],x=[];const t=setTimeout(()=>{ch.close();rej({type:'peer-unavailable'})},4000);
+      ch.onmessage=e=>{const m=e.data;if(m.to!==me)return;if(m.ok){clearTimeout(t);res({id:'host',send(d){ch.postMessage({to:'host',from:me,d})},onData(f){h.push(f)},onClose(f){x.push(f)},close(){ch.postMessage({to:'host',from:me,bye:1});ch.close()}});return}
+        if(m.bye){x.forEach(f=>f());return}h.forEach(f=>f(m.d))};ch.postMessage({to:'host',from:me,hello:1})})}
+  await loadPeer();return new Promise((res,rej)=>{const p=new window.Peer({debug:0});NET.peer=p;const t=setTimeout(()=>rej({type:'timeout'}),15000);
+    p.on('error',e=>{clearTimeout(t);rej(e)});p.on('open',()=>{const c=p.connect(PID(code),{reliable:true,serialization:'json'});c.on('open',()=>{clearTimeout(t);res(wrapPJ(c))});c.on('error',e=>{clearTimeout(t);rej(e)})})})}
+const myName=()=>(G.names[0]||'').trim()||'Joueur';
+function lobbyHTML(){const L=NET.lobby,hst=NET.role==='host',tot=L.length+G.bots;
+  const items=L.map((p,k)=>`<li>${k===0?'👑':'🙂'} ${p.name.replace(/[<>&]/g,'')}${(hst&&k===0)||(!hst&&p.me)?' (toi)':''}<span class="ok">✓ connecté</span></li>`).join('')+Array.from({length:G.bots},()=>'<li>🤖 Robot</li>').join('');
+  return`<div class="e-k">Partie en ligne</div><div class="e-t">Code&nbsp;: <span class="code">${NET.code}</span></div>
+    <div class="e-s">${hst?'Donne ce code à tes amis&nbsp;: sur le jeu, ils touchent «&nbsp;Rejoindre une partie&nbsp;» et le tapent.':'Tu es dans la salle d’attente. L’hôte va lancer la partie.'}</div>
+    <ul class="lob">${items}</ul>
+    ${hst?`<div class="lobrow"><button class="btn" data-lb="-">−</button>Robots&nbsp;: ${G.bots}<button class="btn" data-lb="+">+</button></div>
+      <button class="btn big" id="lobGo" ${tot<2?'disabled':''}>Lancer la partie${tot<2?'<small>attends un ami ou ajoute un robot</small>':''}</button>`:'<div class="e-s">⏳ En attente du lancement…</div>'}
+    <button class="btn" id="lobQuit" style="width:100%">Quitter</button>`}
+function drawLobby(){$('#lobbyIn').innerHTML=lobbyHTML();$('#lobby').classList.add('show')}
+function lobbyMsg(html){$('#lobbyIn').innerHTML=html;$('#lobby').classList.add('show')}
+function pushLobby(){const names=NET.lobby.map(p=>p.name);for(const c of NET.conns)c.send({t:'lobby',names,bots:G.bots,code:NET.code,you:NET.lobby.findIndex(p=>p.conn===c)})}
+async function createOnline(){SND.init();NET.close();NET.closing=false;G.bots=0;lobbyMsg('<div class="e-t">Connexion…</div><div class="e-s">Création de la partie.</div>');
+  let srv=null,code='';for(let k=0;k<4&&!srv;k++){code=Array.from({length:4},()=>'ABCDEFGHJKMNPQRSTUVWXYZ'[ri(0,22)]).join('');try{srv=await hostServer(code)}catch(e){if(e&&e.type!=='unavailable-id')break}}
+  if(!srv){lobbyMsg('<div class="e-t">Connexion impossible</div><div class="e-s">Vérifie ta connexion internet et réessaie.</div><button class="btn big" id="lobQuit">Retour</button>');return}
+  Object.assign(NET,{role:'host',srv,code,lobby:[{name:myName(),conn:null}],conns:[]});
+  srv.onConnection(c=>{c.onData(m=>hostMsg(c,m));c.onClose(()=>hostDrop(c))});drawLobby()}
+function hostMsg(c,m){if(!m||typeof m!=='object')return;
+  if(m.t==='join'){if(G.online==='host'||NET.lobby.length>=5){c.send({t:'full'});return}if(NET.conns.includes(c))return;NET.conns.push(c);NET.lobby.push({name:String(m.name||'Joueur').slice(0,12),conn:c});G.bots=Math.min(G.bots,5-NET.lobby.length);SND.chime();drawLobby();pushLobby();return}
+  if(m.t==='dec'){const seat=NET.seatOf[c.id],w=NET.wait[seat];if(w&&w.tk===TOKEN){delete NET.wait[seat];w.res(m.dec)}return}
+  if(m.t==='fx'){const seat=NET.seatOf[c.id];if(seat==null||m.who!==seat)return;applyFx(m);bc(m)}}
+function hostDrop(c){if(NET.closing)return;NET.conns=NET.conns.filter(x=>x!==c);const k=NET.lobby.findIndex(p=>p.conn===c);if(k<0)return;const nm=NET.lobby[k].name;NET.lobby.splice(k,1);
+  if(G.online!=='host'){drawLobby();pushLobby();return}
+  const seat=NET.seatOf[c.id];if(seat==null)return;const p=G.players[seat];p.remote=false;p.isHuman=false;toast(`${nm} a quitté — un robot le remplace`,2200);const w=NET.wait[seat];if(w){delete NET.wait[seat];w.res(null)}render()}
+function hostLaunch(){if(NET.role!=='host')return;const humans=NET.lobby.slice(),tot=Math.min(5,humans.length+G.bots);if(tot<2)return;
+  const st={2:[0,3],3:[0,1,4],4:[0,1,3,4],5:[0,1,2,3,4]}[tot],gs=shuffle(st.slice(1));const perm=shuffle([0,1,2,3]);
+  const players=[0,1,2,3,4].map(i=>({name:'',isHuman:false,absent:!st.includes(i),remote:false}));players[0]={name:humans[0].name,isHuman:true,remote:false};
+  NET.seatOf={};humans.slice(1).forEach((h,k)=>{const seat=gs[k];players[seat]={name:h.name,isHuman:true,remote:true};NET.seatOf[h.conn.id]=seat});
+  G.online='host';$('#lobby').classList.remove('show');$('#title').classList.remove('show');$('#end').classList.remove('show');
+  for(const h of humans.slice(1))h.conn.send({t:'start',cfg:{perm,players,me:NET.seatOf[h.conn.id]}});
+  startGame({perm,players,me:0})}
+function restart(){if(G.online==='host')hostLaunch();else if(!G.online)startGame()}
+async function joinOnline(code){code=(code||'').toUpperCase().replace(/[^A-Z]/g,'');if(code.length!==4){$('.lerr').textContent='Le code fait 4 lettres.';return}
+  SND.init();NET.close();NET.closing=false;lobbyMsg('<div class="e-t">Connexion…</div><div class="e-s">Recherche de la partie '+code+'.</div>');
+  let c;try{c=await joinServer(code)}catch(e){showJoin(code,e&&e.type==='peer-unavailable'?'Aucune partie avec ce code. Vérifie les lettres.':'Connexion impossible. Vérifie internet et réessaie.');return}
+  Object.assign(NET,{role:'guest',host:c,code,lobby:[]});c.onData(m=>guestMsg(m));c.onClose(()=>{if(NET.closing||NET.role!=='guest')return;NET.close();TOKEN++;$('#end').classList.remove('show');$('#title').classList.add('show');lobbyMsg('<div class="e-t">Connexion perdue</div><div class="e-s">L’hôte a quitté la partie ou la connexion a coupé.</div><button class="btn big" id="lobQuit">OK</button>')});
+  c.send({t:'join',name:myName()})}
+function guestMsg(m){if(!m||typeof m!=='object')return;
+  if(m.t==='full'){NET.close();showJoin(NET.code,'La partie est pleine ou déjà commencée.');return}
+  if(m.t==='lobby'){NET.lobby=m.names.map((n,k)=>({name:n,me:k===m.you}));G.bots=m.bots;if(G.online!=='guest')drawLobby();return}
+  if(m.t==='start'){NET.q=[];NET.qw=null;G.online='guest';$('#lobby').classList.remove('show');$('#title').classList.remove('show');$('#end').classList.remove('show');startGame(m.cfg);return}
+  if(m.t==='fx'){applyFx(m);return}
+  NET.q.push(m);if(NET.qw){const w=NET.qw;NET.qw=null;w()}}
+function nextMsg(){const t=TOKEN;return new Promise((res,rej)=>{const go=()=>{if(TOKEN!==t)return rej(ABORT);if(NET.q.length)return res(NET.q.shift());NET.qw=go};go()})}
+async function runGuest(){const d=G.device=Menteur();setTimeout(()=>{SND.thud();CAM.shake=Math.max(CAM.shake,.3)},140);G.focus=-1;G.round=1;render();await showIntro(d);G.round=0;let last=null;
+  for(;;){const m=await nextMsg();if(m.t==='end')break;
+    if(m.t==='round'){G.round=m.round;d.clear();G.players.forEach((p,i)=>p.hand=(m.hands[i]||[]).slice());d.setTable(m.tc);SND.card();G.actor=-1;G.llast=null;last=null;render();toast(`Manche ${G.round} — table&nbsp;: ${LK[d.tc][1]}`,1600);await sleep(1500)}
+    else if(m.t==='turn'){if(!m.last)last=null;G.actor=m.a;G.focus=m.a;G.llast=last;render();
+      if(m.a===G.me&&G.players[G.me].alive){let dec;if(G.autoplay)dec=await liarBot(G.me,last,m.forced,d,m.fin);else{G.lsel=[];G.lcan={call:!!last,play:!m.forced,next:!!m.fin};G.ui='liar';render();startHeart();try{dec=await waitInput('liar')}finally{stopHeart()}G.ui='';G.lsel=[];render()}NET.host&&NET.host.send({t:'dec',dec})}}
+    else if(m.t==='play'){const P=G.players[m.who],cs=m.cards;for(const c of cs){const k=P.hand.indexOf(c);if(k>=0)P.hand.splice(k,1);else P.hand.pop()}G.acting=true;render();rigReach(RIGS[m.who],()=>wp(d.g,[0,.08,.1]));await sleep(380);d.playCards(m.who,cs);SND.card();SND.slide();
+      if(P.isHuman)toast(`${YOU(m.who)?ME():P.name}&nbsp;: «&nbsp;${claimTxt(cs.length,d.tc)}&nbsp;»`,1300);else say(m.who,claimTxt(cs.length,d.tc));await sleep(700);rigRelease(RIGS[m.who]);G.acting=false;last={who:m.who,cards:cs};G.llast=last;render();await sleep(450)}
+    else if(m.t==='call'){if(last)await liarCall(m.who,last,d)}
+    else if(m.t==='shot'){const p=G.players[m.who];p.bullet=m.bang?p.shots:99;G.actor=m.who;render();toast(`🔫 ${YOU(m.who)?'À TOI DE TIRER':NM(m.who).toUpperCase()}`,1300);await sleep(900);
+      if(await gunTrial(m.who))await kill(m.who);else await sleep(600);render()}
+    else if(m.t==='clear'){d.clear();last=null;G.llast=null}
+    else if(m.t==='lastlap'){SND.bell();toast(`${S(m.who)} ${V(m.who,'a','as')} vidé sa main — dernier tour&nbsp;!`,1900);await sleep(1500)}
+    else if(m.t==='roundEnd'){toast('Fin de la manche',1200);await sleep(1100)}}}
+function showJoin(code,err){lobbyMsg(`<div class="e-k">Rejoindre une partie</div><div class="e-t">Code de la partie</div>
+  <input id="joinCode" maxlength="4" autocomplete="off" autocapitalize="characters" placeholder="ABCD" value="${code||''}"><div class="lerr">${err||''}</div>
+  <div class="e-s">Ton nom&nbsp;: <b>${myName().replace(/[<>&]/g,'')}</b> (modifiable sur l’écran d’accueil)</div>
+  <button class="btn big" id="joinGo">Rejoindre</button><button class="btn" id="lobQuit" style="width:100%">Annuler</button>`);setTimeout(()=>{const i=$('#joinCode');i&&i.focus()},50)}
+$('#onCreate').addEventListener('click',()=>createOnline());
+$('#onJoin').addEventListener('click',()=>showJoin(''));
+$('#lobby').addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;
+  if(t.id==='lobQuit'){NET.close();return}
+  if(t.id==='lobGo'){hostLaunch();return}
+  if(t.id==='joinGo'){joinOnline($('#joinCode').value);return}
+  if(t.dataset.lb){G.bots=clamp(G.bots+(t.dataset.lb==='+'?1:-1),0,5-NET.lobby.length);drawLobby();pushLobby()}});
+$('#lobby').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='joinCode')joinOnline(e.target.value)});
 
 /* ================= INIT ================= */
 $('#tOpp').innerHTML=PERSONAS.map(P=>`<div>${avatarSVG(P.mask,P.color)}${P.name}</div>`).join('');
@@ -1488,7 +1596,7 @@ namesUI();resizeStage();
 let ok=false;try{ok=glInit();if(ok)initWorld()}catch(e){console.error(e);ok=false}
 if(!ok){$('#nogl').style.display='flex'}
 requestAnimationFrame(frame);
-window.__MB={gunTrial,toScreen,wp,G,startGame,RIGS:()=>RIGS,PARTS};
+window.__MB={NET,gunTrial,toScreen,wp,G,startGame,RIGS:()=>RIGS,PARTS};
 })();
 </script>
 </body>
