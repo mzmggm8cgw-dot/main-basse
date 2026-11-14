@@ -213,6 +213,22 @@ header{position:absolute;z-index:20;top:max(8px,env(safe-area-inset-top));right:
  #cards{min-height:0;padding:6px 0 0;gap:5px;justify-content:flex-start}.card{width:44px;height:58px;gap:2px}.card .ci{font-size:17px}.card .cn{font-size:8.5px}.nocards{display:none}
  #cardInfo{font-size:11px;padding:5px 7px;margin-top:5px}
 }
+/* responsive */
+.icbtn{min-width:clamp(32px,10.4vw,44px);height:clamp(32px,10.4vw,44px);font-size:clamp(13px,4.3vw,18px);border-radius:clamp(8px,2.6vw,11px)}
+header{gap:clamp(3px,1.4vw,7px)}
+#hint{font-size:clamp(12px,3.8vw,16px);padding:clamp(4px,1.6vw,8px) clamp(7px,2.4vw,11px);top:calc(max(8px,env(safe-area-inset-top)) + clamp(40px,12.5vw,52px))}
+#hint .you{font-size:clamp(16px,5.4vw,22px)}
+#controls .btn{font-size:clamp(14px,4.4vw,19px);padding:clamp(9px,3.2vw,14px) clamp(10px,3.6vw,16px)}
+#controls .btn.big{font-size:clamp(15px,4.8vw,20px)}
+.tag .nm{font-size:clamp(11.5px,3.6vw,15px)}.tag{padding:2px clamp(4px,1.6vw,7px) 3px}
+#me{padding:clamp(4px,1.6vw,7px) clamp(7px,2.6vw,11px)}.me-ava svg{width:clamp(26px,8.4vw,34px);height:clamp(26px,8.4vw,34px)}.me-name{font-size:clamp(13px,4vw,16px)}
+#toast{font-size:clamp(14px,4.6vw,19px);max-width:88%}
+.t-logo{font-size:clamp(34px,12vw,50px)}.btn.big{font-size:clamp(16px,5.2vw,21px);padding:clamp(11px,3.6vw,15px)}
+.ov{padding:max(14px,env(safe-area-inset-top)) 14px max(14px,env(safe-area-inset-bottom))}
+#stamp{top:calc(max(8px,env(safe-area-inset-top)) + clamp(86px,27vw,118px));font-size:clamp(17px,5.6vw,26px);letter-spacing:2px;white-space:nowrap;padding:2px 12px;border-width:2px;background:rgba(8,5,4,.6);border-radius:8px;transform:translate(-50%,-50%) rotate(-4deg) scale(1.4)}
+@keyframes stamp{0%{opacity:0;transform:translate(-50%,-50%) rotate(-4deg) scale(1.5)}10%{opacity:1;transform:translate(-50%,-50%) rotate(-4deg) scale(1)}75%{opacity:.95}100%{opacity:0;transform:translate(-50%,-70%) rotate(-4deg) scale(.95)}}
+@media (max-height:640px) and (orientation:portrait){.icbtn{min-width:32px;height:32px;font-size:13px}#hint{top:calc(max(6px,env(safe-area-inset-top)) + 40px)}#stamp{top:calc(max(6px,env(safe-area-inset-top)) + 84px)}}
+@media (orientation:landscape) and (max-height:560px){#stamp{top:22%;font-size:20px}.icbtn{min-width:36px;height:36px;font-size:15px}#hint{top:max(6px,env(safe-area-inset-top))}}
 </style>
 </head>
 <body>
@@ -1523,11 +1539,14 @@ function lobbyHTML(){const L=NET.lobby,hst=NET.role==='host',tot=L.length+G.bots
   const items=L.map((p,k)=>`<li>${k===0?'👑':'🙂'} ${p.name.replace(/[<>&]/g,'')}${(hst&&k===0)||(!hst&&p.me)?' (toi)':''}<span class="ok">✓ connecté</span></li>`).join('')+Array.from({length:G.bots},()=>'<li>🤖 Robot</li>').join('');
   return`<div class="e-k">Partie en ligne</div><div class="e-t">Code&nbsp;: <span class="code">${NET.code}</span></div>
     <div class="e-s">${hst?'Donne ce code à tes amis&nbsp;: sur le jeu, ils touchent «&nbsp;Rejoindre une partie&nbsp;» et le tapent.':'Tu es dans la salle d’attente. L’hôte va lancer la partie.'}</div>
+    <div class="lobrow">Ton pseudo&nbsp;: <input id="lobName" class="nm-in" maxlength="12" autocomplete="off" style="flex:0 1 170px" value="${myName().replace(/["<>&]/g,'')}"></div>
     <ul class="lob">${items}</ul>
     ${hst?`<div class="lobrow"><button class="btn" data-lb="-">−</button>Robots&nbsp;: ${G.bots}<button class="btn" data-lb="+">+</button></div>
       <button class="btn big" id="lobGo" ${tot<2?'disabled':''}>Lancer la partie${tot<2?'<small>attends un ami ou ajoute un robot</small>':''}</button>`:'<div class="e-s">⏳ En attente du lancement…</div>'}
     <button class="btn" id="lobQuit" style="width:100%">Quitter</button>`}
-function drawLobby(){$('#lobbyIn').innerHTML=lobbyHTML();$('#lobby').classList.add('show')}
+function drawLobby(){const a=document.activeElement,keep=a&&a.id==='lobName'?{v:a.value,s:a.selectionStart}:null;$('#lobbyIn').innerHTML=lobbyHTML();if(keep){const i=$('#lobName');i.value=keep.v;i.focus();try{i.setSelectionRange(keep.s,keep.s)}catch(e){}}$('#lobby').classList.add('show')}
+const cleanName=v=>String(v||'').replace(/[^\p{L}\p{N} _\-]/gu,'').slice(0,12).trim();
+function setMyName(v){v=cleanName(v);if(!v)return;G.names[0]=v;document.querySelectorAll('.nm-in[data-k="0"]').forEach(i=>i.value=v);if(NET.role==='host'){NET.lobby[0].name=v;drawLobby();pushLobby()}else if(NET.role==='guest'&&NET.host)NET.host.send({t:'name',name:v})}
 function lobbyMsg(html){$('#lobbyIn').innerHTML=html;$('#lobby').classList.add('show')}
 function pushLobby(){const names=NET.lobby.map(p=>p.name);for(const c of NET.conns)c.send({t:'lobby',names,bots:G.bots,code:NET.code,you:NET.lobby.findIndex(p=>p.conn===c)})}
 async function createOnline(){SND.init();NET.close();NET.closing=false;G.bots=0;lobbyMsg('<div class="e-t">Connexion…</div><div class="e-s">Création de la partie.</div>');
@@ -1536,7 +1555,8 @@ async function createOnline(){SND.init();NET.close();NET.closing=false;G.bots=0;
   Object.assign(NET,{role:'host',srv,code,lobby:[{name:myName(),conn:null}],conns:[]});
   srv.onConnection(c=>{c.onData(m=>hostMsg(c,m));c.onClose(()=>hostDrop(c))});drawLobby()}
 function hostMsg(c,m){if(!m||typeof m!=='object')return;
-  if(m.t==='join'){if(G.online==='host'||NET.lobby.length>=5){c.send({t:'full'});return}if(NET.conns.includes(c))return;NET.conns.push(c);NET.lobby.push({name:String(m.name||'Joueur').slice(0,12),conn:c});G.bots=Math.min(G.bots,5-NET.lobby.length);SND.chime();drawLobby();pushLobby();return}
+  if(m.t==='join'){if(G.online==='host'||NET.lobby.length>=5){c.send({t:'full'});return}if(NET.conns.includes(c))return;NET.conns.push(c);NET.lobby.push({name:cleanName(m.name)||'Joueur',conn:c});G.bots=Math.min(G.bots,5-NET.lobby.length);SND.chime();drawLobby();pushLobby();return}
+  if(m.t==='name'){const e=NET.lobby.find(p=>p.conn===c),v=cleanName(m.name);if(e&&v){e.name=v;if(G.online==='host'){const st=NET.seatOf[c.id];if(st!=null){G.players[st].name=v;buildTags();render()}}else drawLobby();pushLobby()}return}
   if(m.t==='dec'){const seat=NET.seatOf[c.id],w=NET.wait[seat];if(w&&w.tk===TOKEN){delete NET.wait[seat];w.res(m.dec)}return}
   if(m.t==='fx'){const seat=NET.seatOf[c.id];if(seat==null||m.who!==seat)return;applyFx(m);bc(m)}}
 function hostDrop(c){if(NET.closing)return;NET.conns=NET.conns.filter(x=>x!==c);const k=NET.lobby.findIndex(p=>p.conn===c);if(k<0)return;const nm=NET.lobby[k].name;NET.lobby.splice(k,1);
@@ -1586,7 +1606,8 @@ $('#lobby').addEventListener('click',e=>{const t=e.target.closest('button');if(!
   if(t.id==='lobGo'){hostLaunch();return}
   if(t.id==='joinGo'){joinOnline($('#joinCode').value);return}
   if(t.dataset.lb){G.bots=clamp(G.bots+(t.dataset.lb==='+'?1:-1),0,5-NET.lobby.length);drawLobby();pushLobby()}});
-$('#lobby').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='joinCode')joinOnline(e.target.value)});
+$('#lobby').addEventListener('change',e=>{if(e.target.id==='lobName')setMyName(e.target.value)});
+$('#lobby').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='lobName'){e.target.blur();return}if(e.key==='Enter'&&e.target.id==='joinCode')joinOnline(e.target.value)});
 
 /* ================= INIT ================= */
 $('#tOpp').innerHTML=PERSONAS.map(P=>`<div>${avatarSVG(P.mask,P.color)}${P.name}</div>`).join('');
