@@ -69,6 +69,8 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;mar
 @keyframes splat{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}4%{opacity:.95;transform:translate(-50%,-50%) scale(1)}55%{opacity:.8}100%{opacity:0;transform:translate(-50%,-5%) scale(1,1.6)}}
 .pips{display:inline-flex;gap:2px;align-items:center;padding:2px 0}.pips i{width:7px;height:7px;border-radius:50%;background:#d8b25a;box-shadow:0 0 4px rgba(216,178,90,.6)}.pips i.u{background:#2a0c0c;box-shadow:none;border:1px solid #6a2a2a}#meHands .pips i{width:10px;height:10px}
 [hidden]{display:none!important}
+.icbtn.mic-on{border-color:#7fd39a;box-shadow:0 0 12px rgba(127,211,154,.55)}
+.tag.speaking{border-color:#7fd39a;box-shadow:0 0 14px rgba(127,211,154,.7)}.tag.speaking .nm::after{content:' 🎙️';font-size:.8em}
 #lobby{background:#070505}
 .code{font-family:'Special Elite',monospace;letter-spacing:8px;color:var(--bone);font-size:46px}
 .lob{list-style:none;padding:0;margin:0 0 14px;text-align:left}.lob li{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid rgba(232,220,192,.12);font-size:16px}.lob li .ok{margin-left:auto;color:#7fd39a;font-size:13px}
@@ -237,6 +239,7 @@ header{gap:clamp(3px,1.4vw,7px)}
     <div class="logo">MAIN <b>BASSE</b></div>
     <div class="hdr-r">
       <span id="roundLbl"></span>
+      <button class="icbtn" id="micBtn" title="Micro" hidden>🎤</button>
       <button class="icbtn" id="aimBtn" title="Menacer avec le revolver">🔫</button>
       <button class="icbtn" id="fkBtn" title="Doigt d’honneur">🖕</button>
       <button class="icbtn" id="spdBtn" title="Vitesse">×1</button>
@@ -302,6 +305,7 @@ header{gap:clamp(3px,1.4vw,7px)}
       <li>Le joueur suivant te croit et joue… ou crie «&nbsp;Menteur&nbsp;!». On retourne les cartes&nbsp;: celui qui a tort presse la détente (6 chambres, 1 balle). Le tour passe ensuite au joueur suivant.</li>
       <li>Quand un joueur a vidé sa main, c’est le dernier tour. À la fin, il peut contester la dernière pose ou lancer la nouvelle manche.</li>
       <li>Les places sont tirées au hasard à chaque partie. Le dernier en vie gagne.</li>
+      <li>En ligne, le bouton 🎤 ouvre ton micro pour parler aux autres joueurs&nbsp;; touche-le encore pour le couper.</li>
     </ol>
     <div class="cards-help" id="cardsHelp" hidden></div>
     <button class="btn big" id="helpClose">Reprendre</button>
@@ -1319,7 +1323,7 @@ function renderHint(){const h=$('#hint');let top='',sub='',sm='';const d=G.devic
   else if(G.actor>=0&&G.players[G.actor]&&G.players[G.actor].alive)sub=isHm(G.actor)?'…':`${G.players[G.actor].name} ${G.acting?'agit':'réfléchit'}…`;
   h.innerHTML=(top?`<span class="you">${top}</span>`:'')+sub+(sm?`<span class="sm">${sm}</span>`:'')}
 function renderControls(){if(G.game==='liar'){$('#controls').innerHTML=liarControls();return}$('#controls').innerHTML=G.ui==='target'?G.players.filter(p=>p.alive&&p.i!==G.actor).map(p=>`<button class="btn" data-target="${p.i}">${YOU(p.i)?ME():p.name}</button>`).join(''):(G.device&&G.device.controls?G.device.controls():'')}
-function render(){if(!G.players.length)return;$('#app').classList.toggle('liar',G.game==='liar');updateTags();updateMe();renderCards();renderControls();renderHint();{const hh=$('#hint');hh.classList.toggle('mine',hh.innerHTML.startsWith('<span class="you"'))}$('#roundLbl').innerHTML=G.device?`Manche ${G.round}<br>${G.device.name}`:''}
+function render(){if(!G.players.length)return;updMic();$('#app').classList.toggle('liar',G.game==='liar');updateTags();updateMe();renderCards();renderControls();renderHint();{const hh=$('#hint');hh.classList.toggle('mine',hh.innerHTML.startsWith('<span class="you"'))}$('#roundLbl').innerHTML=G.device?`Manche ${G.round}<br>${G.device.name}`:''}
 
 /* ================= FLOW ================= */
 function pickTarget(i){const P=G.players[i].persona;let best=-1,bs=-1e9;for(const p of G.players){if(!p.alive||p.i===i)continue;const s=G.players[i].grudge[p.i]*1.5+(p.isHuman?P.humanBias:0)+p.hands*.4+rand()*.8;if(s>bs){bs=s;best=p.i}}return best}
@@ -1509,7 +1513,7 @@ document.addEventListener('visibilitychange',()=>{if(!SND.c)return;try{document.
 
 /* ================= EN LIGNE ================= */
 const NET={role:null,srv:null,peer:null,conns:[],seatOf:{},wait:{},q:[],qw:null,code:'',lobby:[],host:null,closing:false,
-  close(){this.closing=true;try{for(const c of this.conns)c.close()}catch(e){}try{this.host&&this.host.close()}catch(e){}try{this.srv&&this.srv.destroy()}catch(e){}try{this.peer&&this.peer.destroy()}catch(e){}
+  close(){this.closing=true;voiceStop();try{for(const c of this.conns)c.close()}catch(e){}try{this.host&&this.host.close()}catch(e){}try{this.srv&&this.srv.destroy()}catch(e){}try{this.peer&&this.peer.destroy()}catch(e){}
     Object.assign(this,{role:null,srv:null,peer:null,conns:[],seatOf:{},wait:{},q:[],qw:null,code:'',lobby:[],host:null});G.online=null;$('#lobby').classList.remove('show');setTimeout(()=>this.closing=false,300)}};
 const BC=location.hash==='#bc';
 function bc(m){if(G.online!=='host')return;for(const c of NET.conns)c.send(m)}
@@ -1526,13 +1530,13 @@ async function hostServer(code){
       if(m.hello){const c={id:m.from,h:[],x:[],send(d){ch.postMessage({to:m.from,d})},onData(f){this.h.push(f)},onClose(f){this.x.push(f)},close(){ch.postMessage({to:m.from,bye:1})}};cs[m.from]=c;onc&&onc(c);ch.postMessage({to:m.from,ok:1});return}
       const c=cs[m.from];if(!c)return;if(m.bye){c.x.forEach(f=>f());delete cs[m.from];return}c.h.forEach(f=>f(m.d))};
     return{onConnection(f){onc=f},destroy(){ch.close()}}}
-  await loadPeer();const p=await new Promise((res,rej)=>{const p=new window.Peer(PID(code),{debug:0});const t=setTimeout(()=>rej({type:'timeout'}),15000);p.on('open',()=>{clearTimeout(t);res(p)});p.on('error',e=>{clearTimeout(t);rej(e)})});
+  await loadPeer();const p=await new Promise((res,rej)=>{const p=new window.Peer(PID(code),{debug:0});NET.vpeer=p;voiceListen(p);const t=setTimeout(()=>rej({type:'timeout'}),15000);p.on('open',()=>{clearTimeout(t);res(p)});p.on('error',e=>{clearTimeout(t);rej(e)})});
   return{onConnection(f){p.on('connection',c=>{c.on('open',()=>f(wrapPJ(c)))})},destroy(){p.destroy()}}}
 async function joinServer(code){
   if(BC){const me='g'+Math.random().toString(36).slice(2,8),ch=new BroadcastChannel('mb-'+code);return new Promise((res,rej)=>{const h=[],x=[];const t=setTimeout(()=>{ch.close();rej({type:'peer-unavailable'})},4000);
       ch.onmessage=e=>{const m=e.data;if(m.to!==me)return;if(m.ok){clearTimeout(t);res({id:'host',send(d){ch.postMessage({to:'host',from:me,d})},onData(f){h.push(f)},onClose(f){x.push(f)},close(){ch.postMessage({to:'host',from:me,bye:1});ch.close()}});return}
         if(m.bye){x.forEach(f=>f());return}h.forEach(f=>f(m.d))};ch.postMessage({to:'host',from:me,hello:1})})}
-  await loadPeer();return new Promise((res,rej)=>{const p=new window.Peer({debug:0});NET.peer=p;const t=setTimeout(()=>rej({type:'timeout'}),15000);
+  await loadPeer();return new Promise((res,rej)=>{const p=new window.Peer({debug:0});NET.peer=p;voiceListen(p);const t=setTimeout(()=>rej({type:'timeout'}),15000);
     p.on('error',e=>{clearTimeout(t);rej(e)});p.on('open',()=>{const c=p.connect(PID(code),{reliable:true,serialization:'json'});c.on('open',()=>{clearTimeout(t);res(wrapPJ(c))});c.on('error',e=>{clearTimeout(t);rej(e)})})})}
 const myName=()=>(G.names[0]||'').trim()||'Joueur';
 function lobbyHTML(){const L=NET.lobby,hst=NET.role==='host',tot=L.length+G.bots;
@@ -1543,12 +1547,12 @@ function lobbyHTML(){const L=NET.lobby,hst=NET.role==='host',tot=L.length+G.bots
     <ul class="lob">${items}</ul>
     ${hst?`<div class="lobrow"><button class="btn" data-lb="-">−</button>Robots&nbsp;: ${G.bots}<button class="btn" data-lb="+">+</button></div>
       <button class="btn big" id="lobGo" ${tot<2?'disabled':''}>Lancer la partie${tot<2?'<small>attends un ami ou ajoute un robot</small>':''}</button>`:'<div class="e-s">⏳ En attente du lancement…</div>'}
-    <button class="btn" id="lobQuit" style="width:100%">Quitter</button>`}
+    ${BC?'':`<button class="btn" id="lobMic" style="width:100%;margin-bottom:10px">${micLabel()}</button>`}<button class="btn" id="lobQuit" style="width:100%">Quitter</button>`}
 function drawLobby(){const a=document.activeElement,keep=a&&a.id==='lobName'?{v:a.value,s:a.selectionStart}:null;$('#lobbyIn').innerHTML=lobbyHTML();if(keep){const i=$('#lobName');i.value=keep.v;i.focus();try{i.setSelectionRange(keep.s,keep.s)}catch(e){}}$('#lobby').classList.add('show')}
 const cleanName=v=>String(v||'').replace(/[^\p{L}\p{N} _\-]/gu,'').slice(0,12).trim();
 function setMyName(v){v=cleanName(v);if(!v)return;G.names[0]=v;document.querySelectorAll('.nm-in[data-k="0"]').forEach(i=>i.value=v);if(NET.role==='host'){NET.lobby[0].name=v;drawLobby();pushLobby()}else if(NET.role==='guest'&&NET.host)NET.host.send({t:'name',name:v})}
 function lobbyMsg(html){$('#lobbyIn').innerHTML=html;$('#lobby').classList.add('show')}
-function pushLobby(){const names=NET.lobby.map(p=>p.name);for(const c of NET.conns)c.send({t:'lobby',names,bots:G.bots,code:NET.code,you:NET.lobby.findIndex(p=>p.conn===c)})}
+function pushLobby(){const names=NET.lobby.map(p=>p.name);NET.vids={};if(NET.vpeer)NET.vids[NET.vpeer.id]=1;for(const c of NET.conns)NET.vids[c.id]=1;for(const c of NET.conns)c.send({t:'lobby',names,bots:G.bots,code:NET.code,you:NET.lobby.findIndex(p=>p.conn===c),vids:NET.vids});voiceCallAll()}
 async function createOnline(){SND.init();NET.close();NET.closing=false;G.bots=0;lobbyMsg('<div class="e-t">Connexion…</div><div class="e-s">Création de la partie.</div>');
   let srv=null,code='';for(let k=0;k<4&&!srv;k++){code=Array.from({length:4},()=>'ABCDEFGHJKMNPQRSTUVWXYZ'[ri(0,22)]).join('');try{srv=await hostServer(code)}catch(e){if(e&&e.type!=='unavailable-id')break}}
   if(!srv){lobbyMsg('<div class="e-t">Connexion impossible</div><div class="e-s">Vérifie ta connexion internet et réessaie.</div><button class="btn big" id="lobQuit">Retour</button>');return}
@@ -1558,7 +1562,8 @@ function hostMsg(c,m){if(!m||typeof m!=='object')return;
   if(m.t==='join'){if(G.online==='host'||NET.lobby.length>=5){c.send({t:'full'});return}if(NET.conns.includes(c))return;NET.conns.push(c);NET.lobby.push({name:cleanName(m.name)||'Joueur',conn:c});G.bots=Math.min(G.bots,5-NET.lobby.length);SND.chime();drawLobby();pushLobby();return}
   if(m.t==='name'){const e=NET.lobby.find(p=>p.conn===c),v=cleanName(m.name);if(e&&v){e.name=v;if(G.online==='host'){const st=NET.seatOf[c.id];if(st!=null){G.players[st].name=v;buildTags();render()}}else drawLobby();pushLobby()}return}
   if(m.t==='dec'){const seat=NET.seatOf[c.id],w=NET.wait[seat];if(w&&w.tk===TOKEN){delete NET.wait[seat];w.res(m.dec)}return}
-  if(m.t==='fx'){const seat=NET.seatOf[c.id];if(seat==null||m.who!==seat)return;applyFx(m);bc(m)}}
+  if(m.t==='fx'){const seat=NET.seatOf[c.id];if(seat==null||m.who!==seat)return;applyFx(m);bc(m)}
+  if(m.t==='spk'){const seat=NET.seatOf[c.id];if(seat==null)return;VOICE.spk[seat]=!!m.on;bc({t:'spk',who:seat,on:!!m.on})}}
 function hostDrop(c){if(NET.closing)return;NET.conns=NET.conns.filter(x=>x!==c);const k=NET.lobby.findIndex(p=>p.conn===c);if(k<0)return;const nm=NET.lobby[k].name;NET.lobby.splice(k,1);
   if(G.online!=='host'){drawLobby();pushLobby();return}
   const seat=NET.seatOf[c.id];if(seat==null)return;const p=G.players[seat];p.remote=false;p.isHuman=false;toast(`${nm} a quitté — un robot le remplace`,2200);const w=NET.wait[seat];if(w){delete NET.wait[seat];w.res(null)}render()}
@@ -1577,9 +1582,10 @@ async function joinOnline(code){code=(code||'').toUpperCase().replace(/[^A-Z]/g,
   c.send({t:'join',name:myName()})}
 function guestMsg(m){if(!m||typeof m!=='object')return;
   if(m.t==='full'){NET.close();showJoin(NET.code,'La partie est pleine ou déjà commencée.');return}
-  if(m.t==='lobby'){NET.lobby=m.names.map((n,k)=>({name:n,me:k===m.you}));G.bots=m.bots;if(G.online!=='guest')drawLobby();return}
+  if(m.t==='lobby'){NET.lobby=m.names.map((n,k)=>({name:n,me:k===m.you}));G.bots=m.bots;NET.vids=m.vids||{};voiceCallAll();if(G.online!=='guest')drawLobby();return}
   if(m.t==='start'){NET.q=[];NET.qw=null;G.online='guest';$('#lobby').classList.remove('show');$('#title').classList.remove('show');$('#end').classList.remove('show');startGame(m.cfg);return}
   if(m.t==='fx'){applyFx(m);return}
+  if(m.t==='spk'){if(m.who!==G.me)VOICE.spk[m.who]=!!m.on;return}
   NET.q.push(m);if(NET.qw){const w=NET.qw;NET.qw=null;w()}}
 function nextMsg(){const t=TOKEN;return new Promise((res,rej)=>{const go=()=>{if(TOKEN!==t)return rej(ABORT);if(NET.q.length)return res(NET.q.shift());NET.qw=go};go()})}
 async function runGuest(){const d=G.device=Menteur();setTimeout(()=>{SND.thud();CAM.shake=Math.max(CAM.shake,.3)},140);G.focus=-1;G.round=1;render();await showIntro(d);G.round=0;let last=null;
@@ -1603,11 +1609,37 @@ $('#onCreate').addEventListener('click',()=>createOnline());
 $('#onJoin').addEventListener('click',()=>showJoin(''));
 $('#lobby').addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;
   if(t.id==='lobQuit'){NET.close();return}
+  if(t.id==='lobMic'){micToggle().then(()=>{const b=$('#lobMic');if(b)b.innerHTML=micLabel()});return}
   if(t.id==='lobGo'){hostLaunch();return}
   if(t.id==='joinGo'){joinOnline($('#joinCode').value);return}
   if(t.dataset.lb){G.bots=clamp(G.bots+(t.dataset.lb==='+'?1:-1),0,5-NET.lobby.length);drawLobby();pushLobby()}});
 $('#lobby').addEventListener('change',e=>{if(e.target.id==='lobName')setMyName(e.target.value)});
 $('#lobby').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='lobName'){e.target.blur();return}if(e.key==='Enter'&&e.target.id==='joinCode')joinOnline(e.target.value)});
+
+
+/* ================= CHAT VOCAL ================= */
+const VOICE={stream:null,on:false,calls:{},els:{},an:null,buf:null,spk:{},me:false,sent:0};
+const micLabel=()=>!VOICE.stream?'🎤 Activer le micro':VOICE.on?'🎙️ Micro ouvert — toucher pour couper':'🔇 Micro coupé — toucher pour parler';
+function myPeer(){return NET.role==='host'?NET.vpeer:NET.peer}
+function voiceListen(p){p.on('call',c=>{try{c.answer()}catch(e){}c.on('stream',st=>playRemote(c.peer,st));c.on('close',()=>dropRemote(c.peer));c.on('error',()=>dropRemote(c.peer))})}
+function playRemote(id,st){let el=VOICE.els[id];if(!el){el=document.createElement('audio');el.autoplay=true;el.setAttribute('playsinline','');document.body.appendChild(el);VOICE.els[id]=el}el.srcObject=st;const pr=el.play();if(pr&&pr.catch)pr.catch(()=>toast('Touche l’écran pour entendre les autres',2200))}
+function dropRemote(id){const el=VOICE.els[id];if(el){el.srcObject=null;el.remove();delete VOICE.els[id]}}
+function voiceCallAll(){const p=myPeer();if(!p||!VOICE.stream||BC)return;for(const id of Object.keys(NET.vids||{})){if(id===p.id||VOICE.calls[id])continue;try{const c=p.call(id,VOICE.stream);if(!c)continue;VOICE.calls[id]=c;const gone=()=>{delete VOICE.calls[id]};c.on('close',gone);c.on('error',gone)}catch(e){}}}
+async function micToggle(){if(!NET.role||BC){toast('Le chat vocal marche dans les parties en ligne',2200);return}
+  if(!VOICE.stream){if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast('Micro indisponible sur ce navigateur',2500);return}
+    try{VOICE.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false})}catch(e){toast('Micro refusé&nbsp;: autorise-le dans les réglages du téléphone',3000);return}
+    VOICE.on=true;try{SND.init();const c=SND.c,src=c.createMediaStreamSource(VOICE.stream),an=c.createAnalyser();an.fftSize=512;src.connect(an);VOICE.an=an;VOICE.buf=new Uint8Array(an.fftSize)}catch(e){}voiceCallAll()}
+  else{VOICE.on=!VOICE.on;VOICE.stream.getAudioTracks().forEach(t=>t.enabled=VOICE.on)}
+  toast(VOICE.on?'🎙️ Micro ouvert':'🔇 Micro coupé',1100);updMic()}
+function updMic(){const b=$('#micBtn');b.hidden=!G.online||BC;b.textContent=!VOICE.stream?'🎤':VOICE.on?'🎙️':'🔇';b.classList.toggle('mic-on',!!VOICE.stream&&VOICE.on)}
+function voiceStop(){try{VOICE.stream&&VOICE.stream.getTracks().forEach(t=>t.stop())}catch(e){}for(const c of Object.values(VOICE.calls))try{c.close()}catch(e){}for(const id of Object.keys(VOICE.els))dropRemote(id);Object.assign(VOICE,{stream:null,on:false,calls:{},an:null,buf:null,spk:{},me:false});const b=$('#micBtn');if(b){b.hidden=true;b.classList.remove('mic-on')}}
+function voiceTick(){if(VOICE.an&&VOICE.on){VOICE.an.getByteTimeDomainData(VOICE.buf);let m=0;for(let k=0;k<VOICE.buf.length;k++){const v=Math.abs(VOICE.buf[k]-128);if(v>m)m=v}
+    const on=m>18;if(on!==VOICE.me&&now()-VOICE.sent>250){VOICE.me=on;VOICE.sent=now();if(G.online==='host'){VOICE.spk[G.me]=on;bc({t:'spk',who:G.me,on})}else if(G.online==='guest'&&NET.host)NET.host.send({t:'spk',on})}}
+  else if(VOICE.me){VOICE.me=false;if(G.online==='host')bc({t:'spk',who:G.me,on:false});else if(NET.host)NET.host.send({t:'spk',on:false})}
+  for(let i=0;i<5;i++){const p=G.players[i];if(!p||!p.tag)continue;const sp=!!VOICE.spk[i]&&i!==G.me;p.tag.classList.toggle('speaking',sp);if(sp&&RIGS[i])RIGS[i].talkUntil=now()+180}}
+setInterval(()=>{try{voiceTick()}catch(e){}},120);
+document.addEventListener('pointerdown',()=>{for(const el of Object.values(VOICE.els))if(el.paused){const p=el.play();p&&p.catch&&p.catch(()=>{})}},true);
+$('#micBtn').addEventListener('click',()=>micToggle());
 
 /* ================= INIT ================= */
 $('#tOpp').innerHTML=PERSONAS.map(P=>`<div>${avatarSVG(P.mask,P.color)}${P.name}</div>`).join('');
