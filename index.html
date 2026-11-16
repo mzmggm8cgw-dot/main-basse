@@ -1371,9 +1371,15 @@ function liarControls(){if(G.ui==='ready')return`<button class="btn big pulse" d
 function liarHint(){const d=G.device;if(!d||d.type!=='menteur')return'';const tc=B(LK[d.tc][1]);if(G.ui==='ready')return`<span class="you">Passe l’appareil</span>À ${B(NM(G.view))} de jouer.`;
   if(G.ui==='liar'){const l=G.llast;return`<span class="you">${YOU(G.view)?'À toi':'À '+NM(G.view)}</span>Table&nbsp;: ${tc}. ${l?`${B(NM(l.who))} a posé ${l.cards.length} carte${l.cards.length>1?'s':''}.`:'Tu ouvres&nbsp;: pose 1 à 3 cartes.'}${G.lcan.next?' Dernière pose de la manche&nbsp;: menteur, ou nouvelle manche&nbsp;?':''}`}
   const a=G.actor;return`Table&nbsp;: ${tc}${a>=0&&G.players[a].alive&&!YOU(a)?` — ${NM(a)} ${G.acting?'agit':'réfléchit'}…`:''}`}
+function binomGE(H,r,n){let s=0;for(let x=n;x<=H;x++){let c=1;for(let k=0;k<x;k++)c=c*(H-k)/(k+1);s+=c*Math.pow(r,x)*Math.pow(1-r,H-x)}return clamp(s,0,1)}
+function lieProb(i,last,d){const p=G.players[i],lp=G.players[last.who],tc=d.tc,n=last.cards.length,kn=d.kn||{good:8,outGood:0,outUnk:0};
+  const own=p.hand.filter(c=>c===tc||c==='J').length,Gr=kn.good-own-kn.outGood;if(Gr<n)return 1;
+  let O=n+kn.outUnk+(kn.und||0)+Math.max(0,(kn.pile||0)-n);for(const q of G.players)if(q.alive&&q.i!==i)O+=q.hand.length;
+  const r=clamp(Gr/Math.max(1,O),0,1),H=lp.hand.length+n,hon=binomGE(H,r,n);
+  let lp0=1-hon*.88;const rate=(lp.lies||0)/Math.max(1,lp.claims||0);if((lp.claims||0)>=2)lp0=lp0*.7+rate*.3;if(lp.hand.length===0)lp0=Math.min(1,lp0+.06);return clamp(lp0,0,1)}
 async function liarBot(i,last,forced,d,fin){await sleep(700+rand()*800);const p=G.players[i],P=p.persona,tc=d.tc;const good=[],bad=[];p.hand.forEach((c,k)=>(c===tc||c==='J'?good:bad).push(k));
   if(forced)return{call:true};
-  if(last){const lp=G.players[last.who];const s=.1+.14*(last.cards.length-1)+.06*good.length+P.cruelty*.12+(lp.hand.length===0?.18:0)+(good.length===0?.12:0)+Math.min(.15,(lp.lies||0)*.05);if(rand()<s)return{call:true}}
+  if(last){const L=lieProb(i,last,d),thr=.56-(P.cruelty||.4)*.12+(p.shots||0)*.03+gauss()*.06+(good.length===0&&!fin?-.12:0);if(L>=.97||L>thr)return{call:true}}
   if(fin)return{next:true};
   if(good.length===0||(bad.length>0&&rand()<P.lie*.6))return{cards:shuffle(bad.slice()).slice(0,Math.min(bad.length,rand()<.65?1:2))};
   return{cards:good.slice(0,Math.min(good.length,rand()<.6?1:rand()<.8?2:3))}}
@@ -1390,28 +1396,27 @@ function ocEligibleMe(){const me=ocMe();if(me<0||!G.freeCall||G.ui==='liar')retu
 function ocClick(){const me=ocMe();if(G.online==='guest'){if(NET.host)NET.host.send({t:'ocall'});G.ocWho=null;render();return}ocTry(me)}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#ocBtn');if(b){e.preventDefault();ocClick()}});
 function ocBots(last,cur,d){const tk=TOKEN;for(const p of G.players){const j=p.i;if(!p.alive||p.absent||p.isHuman||j===last.who||j===cur)continue;
-    const P=p.persona||{},good=p.hand.filter(c=>c===d.tc||c==='J').length,lp=G.players[last.who];
-    const sus=.06+.12*(last.cards.length-1)+.07*good+(P.cruelty||.4)*.1+(lp.hand.length===0?.15:0)+Math.min(.12,(lp.lies||0)*.04);
-    if(rand()<sus*.75)setTimeout(()=>{if(tk!==TOKEN||!OC.open||OC.last!==last)return;if(ocTry(j))say(j,'Menteur !')},(350+rand()*1700)/Math.max(.5,G.speed))}}
+    const P=p.persona||{},L=lieProb(j,last,d),thr=.76-(P.cruelty||.4)*.1+(p.shots||0)*.03+gauss()*.05;
+    if(L>=.97||(L>thr&&rand()<.8))setTimeout(()=>{if(tk!==TOKEN||!OC.open||OC.last!==last)return;if(ocTry(j))say(j,'Menteur !')},(800+rand()*1800)/Math.max(.5,G.speed))}}
 function cancelTurn(i){G.turnTok++;G.ui='';G.lsel=[];stopHeart&&stopHeart();giveInput('liar',{cancel:true});giveInput('ready',{cancel:true});const w=NET.wait&&NET.wait[i];if(w){delete NET.wait[i];w.res({cancel:true})}render()}
 async function runLiar(){const d=G.device=Menteur();setTimeout(()=>{SND.thud();CAM.shake=Math.max(CAM.shake,.3)},140);G.focus=-1;let starter=pick(G.players.filter(p=>p.alive)).i;G.round=1;render();await showIntro(d);G.round=0;
-  while(aliveCount()>1){G.round++;d.clear();const nA=G.players.filter(p=>p.alive).length,need=Math.max(20,nA*5),nJ=need>20?4:2,per=Math.ceil((need-nJ)/3),deck=shuffle([...'R'.repeat(per)+'D'.repeat(per)+'A'.repeat(per)+'J'.repeat(nJ)]);G.players.forEach(p=>{p.hand=p.alive?deck.splice(0,5):[]});d.setTable(pick(['R','D','A']));bc({t:'round',round:G.round,tc:d.tc,hands:G.players.map(p=>p.hand.slice())});SND.card();G.actor=-1;G.llast=null;render();toast(`Manche ${G.round} — table&nbsp;: ${LK[d.tc][1]}`,1600);await sleep(1500);
+  while(aliveCount()>1){G.round++;d.clear();const nA=G.players.filter(p=>p.alive).length,need=Math.max(20,nA*5),nJ=need>20?4:2,per=Math.ceil((need-nJ)/3),deck=shuffle([...'R'.repeat(per)+'D'.repeat(per)+'A'.repeat(per)+'J'.repeat(nJ)]);d.kn={good:per+nJ,outGood:0,outUnk:0,pile:0};G.players.forEach(p=>{p.hand=p.alive?deck.splice(0,5):[]});d.kn.und=deck.length;d.setTable(pick(['R','D','A']));bc({t:'round',round:G.round,tc:d.tc,hands:G.players.map(p=>p.hand.slice())});SND.card();G.actor=-1;G.llast=null;render();toast(`Manche ${G.round} — table&nbsp;: ${LK[d.tc][1]}`,1600);await sleep(1500);
     let cur=starter,last=null,stopAt=-1;
     const adv=c=>{for(let k=1;k<=5;k++){const j=(c+k)%5;if(j===stopAt)return -1;const q=G.players[j];if(q.alive&&q.hand.length)return j}return -1};
     if(!G.players[cur].alive||!G.players[cur].hand.length)cur=adv(cur);
     while(cur>=0&&aliveCount()>1){const P=G.players[cur];if(last&&last.who===cur)last=null;G.actor=cur;render();
       const withC=G.players.filter(p=>p.alive&&p.hand.length);const forced=!!last&&withC.length===1&&stopAt<0;bc({t:'turn',a:cur,forced,fin:false,last:last?{who:last.who,n:last.cards.length}:null});
       let dec,caller=-1;
-      if(G.freeCall&&last){const oc=ocOpen(last,cur);ocBots(last,cur,d);render();const pd=P.isHuman?liarHuman(cur,last,forced):sleep(1000).then(()=>liarBot(cur,last,forced,d));
+      if(G.freeCall&&last){const oc=ocOpen(last,cur);ocBots(last,cur,d);render();const pd=P.isHuman?liarHuman(cur,last,forced):sleep(1300).then(()=>liarBot(cur,last,forced,d));
         const r=await Promise.race([pd.then(x=>({dec:x})),oc.then(i=>({oc:i}))]);OC.open=false;OC.res=null;
         if(r.oc!=null){caller=r.oc;cancelTurn(cur);toast(`⚡ ${YOU(caller)?ME():NM(caller)} ${YOU(caller)?'cries':'crie'} «&nbsp;Menteur&nbsp;» !`,1400)}else dec=r.dec}
       else dec=P.isHuman?await liarHuman(cur,last,forced):await liarBot(cur,last,forced,d);
       if(caller<0&&dec&&dec.cancel)dec=await liarBot(cur,last,forced,d);
       if((caller>=0||dec.call)&&last){const cw=caller>=0?caller:cur;bc({t:'call',who:cw,ooc:caller>=0});const shot=await liarCall(cw,last,d);const dh=G.players[shot].hand.slice();
-        await liarShot(shot);if(aliveCount()<=1)break;if(!G.players[shot].alive)await reshuffleHands(deck,dh);d.clear();bc({t:'clear'});last=null;G.llast=null;
+        await liarShot(shot);if(aliveCount()<=1)break;if(!G.players[shot].alive)await reshuffleHands(deck,dh);if(d.kn&&last){const k=d.kn;k.outGood+=last.cards.filter(c=>c===d.tc||c==='J').length;k.outUnk+=Math.max(0,k.pile-last.cards.length);k.pile=0}d.clear();bc({t:'clear'});last=null;G.llast=null;
         if(G.freeCall)cur=(G.players[cur].alive&&G.players[cur].hand.length&&cur!==stopAt)?cur:adv(cur);else cur=stopAt>=0?adv(cur):adv(shot);continue}
       const cs=(dec.cards||[0]).slice().sort((a,b)=>b-a).map(k=>P.hand.splice(k,1)[0]);bc({t:'play',who:cur,cards:cs});G.acting=true;render();rigReach(RIGS[cur],()=>wp(d.g,[0,.08,.1]));await sleep(380);d.playCards(cur,cs);SND.card();SND.slide();
-      if(P.isHuman)toast(`${YOU(cur)?ME():P.name}&nbsp;: «&nbsp;${claimTxt(cs.length,d.tc)}&nbsp;»`,1300);else say(cur,claimTxt(cs.length,d.tc));await sleep(700);rigRelease(RIGS[cur]);G.acting=false;last={who:cur,cards:cs};render();await sleep(450);
+      if(P.isHuman)toast(`${YOU(cur)?ME():P.name}&nbsp;: «&nbsp;${claimTxt(cs.length,d.tc)}&nbsp;»`,1300);else say(cur,claimTxt(cs.length,d.tc));await sleep(700);rigRelease(RIGS[cur]);G.acting=false;last={who:cur,cards:cs};if(d.kn)d.kn.pile+=cs.length;window.__plays=(window.__plays||0)+1;render();await sleep(450);
       if(!P.hand.length&&stopAt<0){stopAt=cur;bc({t:'lastlap',who:cur});SND.bell();toast(`${S(cur)} ${V(cur,'a','as')} vidé sa main — dernier tour&nbsp;!`,1900);await sleep(1500)}
       cur=adv(cur)}
     if(aliveCount()>1&&stopAt>=0&&last&&last.who!==stopAt&&G.players[stopAt].alive){const f=stopAt,P=G.players[f];G.actor=f;render();bc({t:'turn',a:f,forced:true,fin:true,last:{who:last.who,n:last.cards.length}});
@@ -1420,9 +1425,9 @@ async function runLiar(){const d=G.device=Menteur();setTimeout(()=>{SND.thud();C
     if(aliveCount()<=1)break;
     bc({t:'roundEnd'});toast('Fin de la manche',1200);await sleep(1100);starter=nextAlive(stopAt>=0?stopAt:starter)}}
 async function liarCall(cur,last,d){const P=G.players[cur];G.acting=true;render();stamp('MENTEUR !',true);SND.wrong();if(!P.isHuman)say(cur,'Menteur !');gesture(cur,last.who,1300);{const r=RIGS[cur];if(r){r.fuckUntil=now()+1900/Math.max(1,G.speed*.7);r.glT=last.who;r.glU=r.fuckUntil}}await sleep(1200);d.reveal(last.cards.length);SND.card();await sleep(1200);
-  const lied=last.cards.some(c=>c!==d.tc&&c!=='J');const Lp=G.players[last.who];Lp.claims++;if(lied)Lp.lies++;stamp(lied?'MENSONGE':'VÉRITÉ',lied);if(lied)SND.sting();else SND.chime();await sleep(1600);G.acting=false;return lied?last.who:cur}
+  const lied=last.cards.some(c=>c!==d.tc&&c!=='J');window.__calls=(window.__calls||0)+1;if(lied)window.__hits=(window.__hits||0)+1;const Lp=G.players[last.who];Lp.claims++;if(lied)Lp.lies++;stamp(lied?'MENSONGE':'VÉRITÉ',lied);if(lied)SND.sting();else SND.chime();await sleep(1600);G.acting=false;return lied?last.who:cur}
 async function reshuffleHands(deck,dead){const al=G.players.filter(p=>p.alive&&p.hand.length);if(!al.length)return;const n=al.map(p=>p.hand.length),pool=deck.splice(0);pool.push(...dead);for(const p of al)pool.push(...p.hand.splice(0));shuffle(pool);
-  al.forEach((p,k)=>{p.hand=pool.splice(0,n[k])});deck.push(...pool);bc({t:'redeal',hands:G.players.map(p=>p.hand.slice())});await redealFx()}
+  al.forEach((p,k)=>{p.hand=pool.splice(0,n[k])});deck.push(...pool);if(G.device&&G.device.kn)G.device.kn.und=deck.length;bc({t:'redeal',hands:G.players.map(p=>p.hand.slice())});await redealFx()}
 async function redealFx(){window.__rd=(window.__rd||0)+1;SND.card();setTimeout(()=>SND.slide(),180);setTimeout(()=>SND.card(),360);toast('🔀 Les cartes sont rebattues',1500);render();await sleep(1300)}
 async function liarShot(shot){bc({t:'shot',who:shot,bang:G.players[shot].shots===G.players[shot].bullet});G.actor=shot;render();toast(`🔫 ${YOU(shot)?'À TOI DE TIRER':NM(shot).toUpperCase()}`,1300);if(!G.players[shot].isHuman)say(shot,line(shot,'scared'));await sleep(900);
   if(await gunTrial(shot)){await kill(shot);if(aliveCount()<=1)return;
