@@ -762,7 +762,7 @@ function initWorld(){
   TBLA(N(MS.cyl,M.darkWood,[0,.38,0],null,[.22,.76,.22]));TBLA(N(MS.cyl,M.darkWood,[0,.03,0],null,[.7,.06,.7]));
   // candles
   CANDLES.length=0;
-  for(const[cx,cz,h]of[[-.98,.25,.22],[.92,-.55,.3]]){const c=N(null,null,[cx,TABLE_Y,cz]);TBLA(c);c.add(N(MS.cyl,M.wax,[0,h/2,0],null,[.035,h,.035]));c.add(N(MS.cyl,M.brass,[0,.01,0],null,[.07,.02,.07]));
+  for(const[cx,cz,h]of[[-.9,.5,.2],[.9,.5,.24]]){const c=N(null,null,[cx,TABLE_Y,cz]);TBLA(c);c.add(N(MS.cyl,M.wax,[0,h/2,0],null,[.035,h,.035]));c.add(N(MS.cyl,M.brass,[0,.01,0],null,[.07,.02,.07]));
     c.add(N(MS.sph,M.wax,[.02,h-.03,.02],null,[.012,.035,.012]));const fl=c.add(N(MS.sph,M.flame,[0,h+.035,0],null,[.012,.03,.012]));CANDLES.push({n:c,fl,h,seed:rand()*9})}
   const sc=cvs(64),sx=sc.getContext('2d'),sg=sx.createRadialGradient(32,32,2,32,32,32);sg.addColorStop(0,'rgba(0,0,0,1)');sg.addColorStop(.6,'rgba(0,0,0,.7)');sg.addColorStop(1,'rgba(0,0,0,0)');sx.fillStyle=sg;sx.fillRect(0,0,64,64);TEX.shadow=mkTex(sc,false);
   M.shadow=mat('#ffffff',{tex:TEX.shadow,unlit:true,o:.7});M.dust=mat('#000000',{e:[.55,.45,.3],add:true,o:.5});
