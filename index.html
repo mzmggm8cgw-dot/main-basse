@@ -354,6 +354,7 @@ header{gap:clamp(3px,1.4vw,7px)}
     <button class="btn big" id="startBtn">S’asseoir à la table</button>
     <div class="modes" style="margin-top:10px"><button class="btn" id="onCreate">🌐 Créer une partie en ligne<small>tu reçois un code à donner</small></button><button class="btn" id="onJoin">🔑 Rejoindre une partie<small>avec le code d’un ami</small></button></div>
     <div class="t-foot" id="record">Son conseillé · se joue au doigt</div>
+    <div class="t-foot" id="ver" style="opacity:.55;font-size:10px;margin-top:4px"></div>
   </div>
 </div>
 <div id="help" class="ov">
@@ -381,6 +382,7 @@ header{gap:clamp(3px,1.4vw,7px)}
 <script>
 (()=>{
 'use strict';
+const BUILD=202611161859;
 const $=s=>document.querySelector(s);
 const rand=Math.random;
 const ri=(a,b)=>a+Math.floor(rand()*(b-a+1));
@@ -1368,7 +1370,7 @@ $('#nbBtn').addEventListener('click',()=>{G.bots=(G.bots+1)%(5-G.humans+1);nbUpd
 $('#infBtn').addEventListener('click',()=>{G.endless=!G.endless;$('#infBtn').innerHTML='♾️ Infini&nbsp;: '+(G.endless?'oui':'non')});
 $('#fcBtn').addEventListener('click',()=>{G.freeCall=!G.freeCall;$('#fcBtn').innerHTML='⚡ Menteur libre&nbsp;: '+(G.freeCall?'oui':'non');toast(G.freeCall?'Menteur libre : tout le monde peut crier «&nbsp;Menteur&nbsp;» à tout moment. Le premier qui crie gagne la main.':'Menteur libre désactivé',2600)});
 $('#startBtn').addEventListener('click',()=>{G.score={};SND.init();$('#title').classList.remove('show');startGame()});
-$('#end').addEventListener('click',e=>{if(e.target.id==='watchBtn'){$('#end').classList.remove('show');giveInput('defeat','watch')}else if(e.target.id==='menuBtn'){wakeOff();NET.close();TOKEN++;OC.open=false;OC.res=null;G.ocWho=null;clearTurnTimer();$('#ocBtn').classList.remove('show');if(pending){const p=pending;pending=null;try{p.rej(ABORT)}catch(_){}}$('#end').classList.remove('show');$('#title').classList.add('show')}else if(e.target.id==='againBtn'){SND.init();$('#end').classList.remove('show');restart()}});
+$('#end').addEventListener('click',e=>{if(e.target.id==='watchBtn'){$('#end').classList.remove('show');giveInput('defeat','watch')}else if(e.target.id==='menuBtn'){wakeOff();NET.close();TOKEN++;OC.open=false;OC.res=null;G.ocWho=null;clearTurnTimer();$('#ocBtn').classList.remove('show');if(pending){const p=pending;pending=null;try{p.rej(ABORT)}catch(_){}}$('#end').classList.remove('show');$('#title').classList.add('show');setTimeout(applyUpdate,400)}else if(e.target.id==='againBtn'){SND.init();$('#end').classList.remove('show');restart()}});
 $('#sndBtn').addEventListener('click',()=>{SND.init();SND.setOn(!SND.on);$('#sndBtn').textContent=SND.on?'🔊':'🔇'});
 $('#spdBtn').addEventListener('click',()=>{if(G.online==='guest'){toast('En ligne, c’est l’hôte qui règle la vitesse',2200);return}G.baseSpeed=G.baseSpeed===1?2:1;if(!G.spectate)G.speed=G.baseSpeed;$('#spdBtn').textContent='×'+G.baseSpeed;bc({t:'spd',v:G.speed})});
 function goFS(){const el=document.documentElement;try{if(document.fullscreenElement||document.webkitFullscreenElement){(document.exitFullscreen||document.webkitExitFullscreen).call(document);return true}
@@ -1379,11 +1381,18 @@ $('#fsTitle').addEventListener('click',()=>{if(!goFS())$('#record').textContent=
 $('#quitBtn').addEventListener('click',()=>{if($('#title').classList.contains('show'))return;G.paused=!G.online;$('#quit').classList.add('show')});
 $('#quitNo').addEventListener('click',()=>{G.paused=false;$('#quit').classList.remove('show')});
 $('#quitYes').addEventListener('click',()=>{wakeOff();NET.close();TOKEN++;OC.open=false;OC.res=null;G.ocWho=null;clearTurnTimer();$('#ocBtn').classList.remove('show');if(pending){const p=pending;pending=null;try{p.rej(ABORT)}catch(e){}}stopHeart();G.paused=false;G.sus=0;G.dim=0;G.ui='';G.actor=-1;GS.T=null;if(GUN)GUN.vis=false;SND.hush(0);
-  $('#stage').classList.remove('sus');['#quit','#end','#intro'].forEach(q=>$(q).classList.remove('show'));$('#controls').innerHTML='';$('#hint').innerHTML='';$('#title').classList.add('show')});
+  $('#stage').classList.remove('sus');['#quit','#end','#intro'].forEach(q=>$(q).classList.remove('show'));$('#controls').innerHTML='';$('#hint').innerHTML='';$('#title').classList.add('show');setTimeout(applyUpdate,400)});
 if(!(document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen)){$('#fsBtn').hidden=true;$('#fsTitle').hidden=true}
 $('#helpBtn').addEventListener('click',()=>{G.paused=!G.online&&!$('#title').classList.contains('show');$('#help').classList.add('show')});
 $('#helpClose').addEventListener('click',()=>{G.paused=false;$('#help').classList.remove('show')});
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&G.players.length&&!$('#title').classList.contains('show'))wakeOn();if(!SND.c)return;try{document.hidden?SND.c.suspend():SND.c.resume()}catch(e){}});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate();if(!document.hidden&&G.players.length&&!$('#title').classList.contains('show'))wakeOn();if(!SND.c)return;try{document.hidden?SND.c.suspend():SND.c.resume()}catch(e){}});
+let NEWB=0;
+async function checkUpdate(){if(!BUILD||DBG||!/^https?:$/.test(location.protocol))return;try{const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json(),nb=+j.build||0;if(nb>BUILD){NEWB=nb;applyUpdate()}}catch(e){}}
+function applyUpdate(){if(!NEWB||NEWB<=BUILD)return;let done=null;try{done=sessionStorage.getItem('mb.upd')}catch(e){}if(done===String(NEWB))return;
+  const ae=document.activeElement,idle=$('#title').classList.contains('show')&&!document.querySelector('#lobby.show,#help.show,#quit.show,#end.show')&&!NET.role&&!(ae&&ae.tagName==='INPUT');
+  if(idle){try{sessionStorage.setItem('mb.upd',String(NEWB))}catch(e){}location.replace(location.pathname+'?v='+NEWB)}
+  else if(!applyUpdate.told&&!$('#title').classList.contains('show')){applyUpdate.told=1;toast('🔄 Nouvelle version du jeu disponible — elle s’installera au retour au menu',3800)}}
+setInterval(()=>{if(!document.hidden)checkUpdate()},300000);
 let WL=null;async function wakeOn(){try{if('wakeLock' in navigator&&!WL){WL=await navigator.wakeLock.request('screen');WL.addEventListener('release',()=>{WL=null})}}catch(e){}}
 function wakeOff(){try{WL&&WL.release()}catch(e){}WL=null}
 function saveProfile(){try{localStorage.setItem('mainbasse.profile',JSON.stringify({n:G.names[0]||'',a:G.myAnimal}))}catch(e){}}
@@ -1532,7 +1541,7 @@ function showJoin(code,err){lobbyMsg(`<div class="e-k">Rejoindre une partie</div
 $('#onCreate').addEventListener('click',()=>createOnline());
 $('#onJoin').addEventListener('click',()=>showJoin(''));
 $('#lobby').addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;
-  if(t.id==='lobQuit'){NET.close();leaveLobby3D();$('#title').classList.add('show');return}
+  if(t.id==='lobQuit'){NET.close();leaveLobby3D();$('#title').classList.add('show');setTimeout(applyUpdate,400);return}
   if(t.dataset.an!=null){pickAnimal(+t.dataset.an);return}
   if(t.dataset.sel){const me=NET.role==='host'?NET.lobby[0]:NET.lobby.find(p=>p.me)||{};const taken=new Set(NET.lobby.filter(p=>p!==me).map(p=>p.animal));let k=me.animal==null?G.myAnimal:me.animal;const NA=ANIMALS.length;for(let n=0;n<NA;n++){k=(k+(+t.dataset.sel)+NA)%NA;if(!taken.has(k))break}pickAnimal(k);return}
   if(t.id==='lobInv'){inviteFriends();return}
@@ -1577,6 +1586,8 @@ namesUI();$('#tPick').innerHTML=ANIMALS.map((a,k)=>`<button class="ab ${k===G.my
 let ok=false;try{ok=glInit();if(ok)initWorld()}catch(e){console.error(e);ok=false}
 try{const jc=(new URLSearchParams(location.search).get('j')||'').toUpperCase().replace(/[^A-Z]/g,'');if(jc.length===4){showJoin(jc);history.replaceState(null,'',location.pathname+location.hash)}}catch(e){}
 if(!ok){$('#nogl').style.display='flex'}
+if(BUILD){const b=String(BUILD);$('#ver').textContent=`Version du ${b.slice(6,8)}/${b.slice(4,6)} à ${b.slice(8,10)} h ${b.slice(10,12)}`}
+setTimeout(checkUpdate,900);
 requestAnimationFrame(frame);
 if(DBG)window.__MB={lookBy,lookReset,NET,SND,headshot,GUNF:()=>GUN,M4,gunTrial,toScreen,wp,G,startGame,RIGS:()=>RIGS,PARTS,CAM,LSEATS};
 })();
