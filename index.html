@@ -34,7 +34,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;mar
 #roundLbl{font-size:11px;opacity:.72;text-align:right;line-height:1.2;margin-right:2px}
 .icbtn{background:rgba(0,0,0,.3);border:1px solid rgba(176,141,87,.45);border-radius:8px;min-width:34px;height:32px;font-size:13px;cursor:pointer;padding:0 6px}
 #stage{position:relative;border-radius:16px;overflow:hidden;height:440px;box-shadow:0 0 0 1px rgba(176,141,87,.22),0 14px 44px rgba(0,0,0,.85);background:#0a0807}
-#gl{filter:contrast(1.08) saturate(1.18);position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:manipulation;transition:filter 1s}
+#gl{filter:contrast(1.08) saturate(1.18);position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab;transition:filter 1s}#gl.drag{cursor:grabbing}
 #stage.dead #gl{filter:grayscale(.85) brightness(.75)}
 #stage::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:4;background:radial-gradient(ellipse at 50% 45%,rgba(0,0,0,0) 55%,rgba(0,0,0,.6) 100%)}
 #tags{position:absolute;inset:0;pointer-events:none;z-index:6}
@@ -74,7 +74,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;mar
 .pips{display:inline-flex;gap:2px;align-items:center;padding:2px 0}.pips i{width:7px;height:7px;border-radius:50%;background:#d8b25a;box-shadow:0 0 4px rgba(216,178,90,.6)}.pips i.u{background:#2a0c0c;box-shadow:none;border:1px solid #6a2a2a}#meHands .pips i{width:10px;height:10px}
 [hidden]{display:none!important}
 .icbtn.mic-on{border-color:#7fd39a;box-shadow:0 0 12px rgba(127,211,154,.55)}#micBtn{position:relative}.icbtn.mic-off::after{content:'';position:absolute;left:16%;right:16%;top:calc(50% - 1.5px);height:3px;border-radius:2px;background:#e0262c;transform:rotate(-45deg)}
-.tag.speaking{border-color:#7fd39a;box-shadow:0 0 14px rgba(127,211,154,.7)}.tag.speaking .nm::after{content:' 🎙️';font-size:.8em}
+.tag.speaking{border-color:#7fd39a;box-shadow:0 0 14px rgba(127,211,154,.7)}.tag.lk{border-color:#ff6a4a;box-shadow:0 0 14px rgba(255,90,60,.65)}.tag.speaking .nm::after{content:' 🎙️';font-size:.8em}
 #lobby{background:linear-gradient(rgba(7,5,5,0) 0%,rgba(7,5,5,0) 44%,rgba(7,5,5,.9) 56%,#070505 72%);align-items:flex-end;padding-top:0}
 body.inlobby header,body.inlobby #me,body.inlobby #hint,body.inlobby #controls{display:none!important}
 #lobby:not(.solid){background:linear-gradient(rgba(7,5,5,0) 0,rgba(7,5,5,0) calc(var(--lt,62vh) - 4px),rgba(7,5,5,.82) calc(var(--lt,62vh) + 64px),#070505 100%);padding:0}
@@ -368,7 +368,8 @@ header{gap:clamp(3px,1.4vw,7px)}
       <li>Quand un joueur a vidé sa main, c’est le dernier tour. À la fin, il peut contester la dernière pose ou lancer la nouvelle manche.</li>
       <li><b>⚡ Menteur libre</b> (option)&nbsp;: tout le monde peut crier «&nbsp;Menteur&nbsp;!» dès qu’une pose est faite. Le premier qui crie gagne la main… et presse la détente s’il s’est trompé.</li>
       <li>En ligne&nbsp;: 45 secondes pour jouer, sinon un robot joue à ta place. Le bouton 🎤 ouvre ou coupe ton micro.</li>
-      <li>Au clavier&nbsp;: <b>1</b> à <b>5</b> pour choisir tes cartes, <b>Entrée</b> pour poser, <b>M</b> pour «&nbsp;Menteur&nbsp;», <b>N</b> pour la nouvelle manche.</li>
+      <li>Glisse le doigt (ou la souris) sur l’écran pour regarder à gauche et à droite. La vue se recentre à ton tour&nbsp;; touche deux fois pour la recentrer toi-même. Les boutons 🖕 et 🔫 visent le joueur que tu regardes (son nom s’entoure de rouge).</li>
+      <li>Au clavier&nbsp;: <b>←</b> <b>→</b> pour regarder autour, <b>1</b> à <b>5</b> pour choisir tes cartes, <b>Entrée</b> pour poser, <b>M</b> pour «&nbsp;Menteur&nbsp;», <b>N</b> pour la nouvelle manche.</li>
     </ol>
     <button class="btn big" id="helpClose">Reprendre</button>
   </div>
@@ -946,13 +947,13 @@ function rigUpdate(r,dt,t){
   r.body.r=[r.lean+Math.sin(t*.7+r.t0)*.012*(1-r.deadA),Math.sin(t*.43+r.t0)*.04*(1-r.deadA)+(r.hurt>0?Math.sin(t*38)*.07*r.hurt:0),r.fearA*Math.sin(t*55)*.014+Math.sin(t*.5+r.t0*2)*.02*(1-r.deadA)+r.deadA*(r.deadMode==='side'?1.02:.32)*(r.deadMode?r.deadSide:(r.i%2?1:-1))];
   r.body.s=[1,1+br*(1-r.deadA),1];r.body.p[1]=(r.by||.5)+r.cheerA*Math.abs(Math.sin(t*14))*(r.stand?.06:.025);if(r.deadMode==='side'){r.body.p[1]-=r.deadA*.17;r.body.p[0]=-r.deadA*.22*r.deadSide}
   if(r.stand){r.body.r[2]+=Math.sin(t*.9+r.t0)*.035;r.body.p[0]=Math.sin(t*.9+r.t0)*.025;for(const g of r.legs){const hip=[g.s*.09+r.body.p[0]*.6,r.body.p[1]-.02,0],ank=[g.s*.12,.09,-.01],kn=[g.s*.11,.5+(r.body.p[1]-.9)*.5,.07];setLimb(g.th,hip,kn,.065);setLimb(g.sh,kn,ank,.055);g.kn.p=kn;g.kn.s=[.06,.06,.06];g.ft.p=[g.s*.12,.035,.05];g.ft.s=[.1,.07,.2]}
-    if(tn>(r.emN||0)){r.emN=tn+5000+rand()*9000;const k=rand();if(k<.45){r.waveUntil=tn+1700}else if(k<.75)r.cheerUntil=tn+1200;else if(k<.9){r.fuckUntil=tn+1300;r.lookCamUntil=tn+1300}else r.lookCamUntil=tn+2500}}if(tn<(r.holeUntil||0)&&!G.paused&&rand()<.5)spray(wp(r.face,[.14,.04,0]),[0,-.6,0],1);if(r.headGone&&tn<r.neckUntil&&!G.paused)spray(wp(r.body,[0,.73,0]),[0,1.6,0],Math.round((.5+.5*Math.sin(t*12))*4));
+    if(tn>(r.emN||0)){r.emN=tn+5000+rand()*9000;const k=rand();if(k<.45){r.waveUntil=tn+1700}else if(k<.75)r.cheerUntil=tn+1200;else if(k<.9){r.fuckUntil=tn+1300;r.fkT=null;r.lookCamUntil=tn+1300}else r.lookCamUntil=tn+2500}}if(tn<(r.holeUntil||0)&&!G.paused&&rand()<.5)spray(wp(r.face,[.14,.04,0]),[0,-.6,0],1);if(r.headGone&&tn<r.neckUntil&&!G.paused)spray(wp(r.body,[0,.73,0]),[0,1.6,0],Math.round((.5+.5*Math.sin(t*12))*4));
   const bq=Q.euler(r.body.r[0],r.body.r[1],r.body.r[2]);
   if(!r.isH){
     // look
     let tw;const d=G.device;const dev=d?wp(d.g,[0,.18,0]):[0,1,0];
     if(tn<r.lookCamUntil)tw=CAM.pos;else if(r.i===G.actor||G.acting||G.actor<0)tw=(G.actor===r.i||G.acting||!G.players[G.actor])?dev:dev;else tw=rigHeadW(RIGS[G.actor]);
-    if(r.fkN==null)r.fkN=tn+4000+rand()*12000;if(tn>r.fkN&&!G.paused){r.fkN=tn+7000+rand()*15000;if(p.alive&&!r.fp&&r.i!==G.actor&&!G.sus&&!G.acting&&!GS.T&&!busyTable()&&!r.reachT&&r.deadA<.1&&G.actor>=0&&rand()<.55){const o=G.players.filter(q=>q.alive&&q.i!==r.i);if(o.length){const u=tn+1500+rand()*900,gun=false;r.glT=pick(o).i;r.glU=u;r.glN=u+1500;if(r.glT===0)r.lookCamUntil=u;if(gun)threaten(r.i,r.glT,u-tn);else{r.fuckUntil=u;if(!p.isHuman&&rand()<.35)say(r.i,pick(['Tiens.','Pour toi.','Hé.','…']))}}}}
+    if(r.fkN==null)r.fkN=tn+4000+rand()*12000;if(tn>r.fkN&&!G.paused){r.fkN=tn+7000+rand()*15000;if(p.alive&&!r.fp&&r.i!==G.actor&&!G.sus&&!G.acting&&!GS.T&&!busyTable()&&!r.reachT&&r.deadA<.1&&G.actor>=0&&rand()<.55){const o=G.players.filter(q=>q.alive&&q.i!==r.i);if(o.length){const u=tn+1500+rand()*900,gun=false;r.glT=pick(o).i;r.glU=u;r.glN=u+1500;if(r.glT===0)r.lookCamUntil=u;if(gun)threaten(r.i,r.glT,u-tn);else{r.fuckUntil=u;r.fkT=r.glT;if(!p.isHuman&&rand()<.35)say(r.i,pick(['Tiens.','Pour toi.','Hé.','…']))}}}}
     if(tn>(r.glN||0)){r.glN=tn+2500+rand()*5000;r.glU=tn+700+rand()*900;const o=G.players.filter(q=>q.alive&&q.i!==r.i);r.glT=o.length?pick(o).i:-1}
     if(tn<r.glU&&r.i!==G.actor&&!G.acting&&r.glT>=0&&RIGS[r.glT]&&tn>=r.lookCamUntil)tw=rigHeadW(RIGS[r.glT]);
     if(G.sus&&G.susWho!==r.i&&RIGS[G.susWho])tw=G.susWho===0?V3.add(RIGS[0].root.p,[0,1.3,0]):rigHeadW(RIGS[G.susWho]);
@@ -975,11 +976,12 @@ function rigUpdate(r,dt,t){
   }else{r.skin.e=[r.hurt*.3,0,0]}
   // arms
   const aimOn=tn<(r.aimUntil||0)&&r.gunN&&r.gunN.vis&&p.alive&&!G.sus&&!GS.T&&RIGS[r.aimT]&&G.players[r.aimT].alive;if(r.gunN&&r.gunRest&&!aimOn){r.gunN.p=r.gunRest.p;r.gunN.q=r.gunRest.q}
+  let gs=rigSide(r);if(r.fp){const tt=aimOn?r.aimT:(tn<(r.fuckUntil||0)?r.fkT:null);if(tt!=null&&tt!==r.i&&RIGS[tt]){const want=toLocal(r,rigHeadW(RIGS[tt]))[0]>0?'L':'R';if(r.arms[want].alive)gs=want}}
   for(const sd of['L','R']){const a=r.arms[sd];
-    const S=V3.add(r.body.p,Q.rot(bq,a.sh));let T,kk=10;const aimD=aimOn&&rigSide(r)===sd?V3.norm(V3.sub(toLocal(r,rigHeadW(RIGS[r.aimT])),S)):null;const fk=tn<(r.fuckUntil||0)&&rigSide(r)===sd;
+    const S=V3.add(r.body.p,Q.rot(bq,a.sh));let T,kk=10;const aimD=aimOn&&gs===sd?V3.norm(V3.sub(toLocal(r,rigHeadW(RIGS[r.aimT])),S)):null;const fk=tn<(r.fuckUntil||0)&&gs===sd;
     if(r.deadA>.5)T=r.isH?a.rest:r.deadMode==='side'?[a.s*.2-r.deadSide*.55,.12+a.s*r.deadSide*.08,.12]:[a.s*.24,.8,.66];
     else if(aimD){T=V3.add(S,V3.mul(aimD,(a.a+a.b)*.8));T=[T[0]+Math.sin(t*23)*.004,T[1]+Math.cos(t*19)*.004,T[2]];kk=9}
-    else if(fk)T=r.stand?[a.s*.16,1.62,.32]:r.isH?[a.s*.12,1.3,.5]:[a.s*.2,1.38,.32];
+    else if(fk){const ft=r.fkT,fr=!r.stand&&ft!=null&&ft!==r.i&&RIGS[ft]&&G.players[ft]&&G.players[ft].alive?RIGS[ft]:null;if(fr){const dir=V3.norm(V3.sub(toLocal(r,rigHeadW(fr)),S));T=V3.add(S,V3.mul(dir,(a.a+a.b)*.7));T[1]=Math.max(T[1],S[1]+.2)}else T=r.stand?[a.s*.16,1.62,.32]:r.isH?[a.s*.12,1.3,.5]:[a.s*.2,1.38,.32]}
     else if(r.stand&&tn<(r.waveUntil||0)&&sd==='R')T=[a.s*.34,1.9+Math.sin(t*11)*.04,.12+Math.sin(t*11)*.08];
     else if(r.reachT&&r.reachSide===sd){T=toLocal(r,typeof r.reachT==='function'?r.reachT():r.reachT);kk=r.gripGun===sd&&GUN&&GUN.vis&&GS.T?60:r.reachK}
     else if(r.hover&&rigSide(r)===sd){T=toLocal(r,typeof r.hover==='function'?r.hover():r.hover);kk=8}
@@ -1041,7 +1043,7 @@ function Menteur(){return devInit({type:'menteur',name:'Le Menteur',slide:0,
   syncHand(){const v=G.view,p=G.players[v];if(!p)return;const ok=p.isHuman&&p.alive,show=ok&&(!!G.online||G.humans===1||G.ui==='liar');const key=v+'|'+p.hand.join('')+'|'+show+'|'+ok;if(key===this.hkey)return;this.hkey=key;for(const c of this.hand)this.g.remove(c);this.hand=[];
     if(ok)p.hand.forEach(k=>{const c=this.mkCard(k,!show);c.s=[1.55,1.55,1.55];this.g.add(c);this.hand.push(c)});this.place(1)},
   place(kk){const n=this.hand.length,q=Q.axis([1,0,0],.7);this.hand.forEach((c,j)=>{const sel=G.ui==='liar'&&G.lsel.includes(j);c.q=q;const tg=[(j-(n-1)/2)*.155,.075+(sel?.07:0),.9-(sel?.07:0)];c.p=kk>=1?tg:V3.lerp(c.p,tg,kk)})},
-  syncFans(){for(let i=1;i<5;i++){const r=RIGS[i],p=G.players[i];if(!r||!p)continue;const n=p.alive?p.hand.length:0;if(r.fanC===n)continue;r.fanC=n;if(r.fanN)r.root.remove(r.fanN);r.fanN=null;r.holdT=null;if(!n)continue;
+  syncFans(){for(let i=0;i<5;i++){const r=RIGS[i],p=G.players[i];if(!r||!p)continue;const n=p.alive&&i!==G.view?p.hand.length:0;if(r.fanC===n)continue;r.fanC=n;if(r.fanN)r.root.remove(r.fanN);r.fanN=null;r.holdT=null;if(!n)continue;
     const f=r.fanN=r.root.add(N(null,null,[.2,.99,.44]));for(let j=0;j<n;j++){const c=f.add(N(MS.box,M.cardBack,null,null,[.085,.004,.12]));const q=Q.mul(Q.axis([1,0,0],1.94),Q.axis([0,1,0],(j-(n-1)/2)*.25));c.q=q;c.p=Q.rot(q,[0,j*.003,-.07])}r.holdT=()=>M4.tp(r.root.w,[.2,.9,.43])}},
   update(dt,t){this.syncHand();this.syncFans();this.place(1-Math.exp(-12*dt));for(const c of this.pile){const p=ease(prog(c.t0,c.dur));const q=V3.lerp(c.from,c.to,p);q[1]+=Math.sin(p*PI)*.12;c.n.p=q;
     if(c.rev){const pr=ease(prog(c.rev,500));c.n.r=[0,c.yaw*(1-pr),PI*(1-pr)];const s=1+.35*pr;c.n.s=[s,s,s]}else c.n.r=[0,c.yaw*p,PI]}},
@@ -1112,7 +1114,7 @@ async function runLiar(){const d=G.device=Menteur();setTimeout(()=>{SND.thud();C
       if(caller>=0||dec.call){const cw=caller>=0?caller:f;bc({t:'call',who:cw,ooc:caller>=0,cards:last.cards});const shot=await liarCall(cw,last,d);await liarShot(shot)}}
     if(aliveCount()<=1)break;
     bc({t:'roundEnd'});toast('Fin de la manche',1200);await sleep(1100);starter=nextAlive(stopAt>=0?stopAt:starter)}}
-async function liarCall(cur,last,d){const P=G.players[cur];G.acting=true;render();stamp('MENTEUR !',true);SND.wrong();if(!P.isHuman)say(cur,'Menteur !');gesture(cur,last.who,1300);{const r=RIGS[cur];if(r){r.fuckUntil=now()+1900/Math.max(1,G.speed*.7);r.glT=last.who;r.glU=r.fuckUntil}}await sleep(1200);d.reveal(last.cards.length,last.cards);SND.card();await sleep(1200);
+async function liarCall(cur,last,d){const P=G.players[cur];G.acting=true;render();stamp('MENTEUR !',true);SND.wrong();if(!P.isHuman)say(cur,'Menteur !');gesture(cur,last.who,1300);{const r=RIGS[cur];if(r){r.fuckUntil=now()+1900/Math.max(1,G.speed*.7);r.fkT=last.who;r.glT=last.who;r.glU=r.fuckUntil}}await sleep(1200);d.reveal(last.cards.length,last.cards);SND.card();await sleep(1200);
   const lied=last.cards.some(c=>c!==d.tc&&c!=='J');dbg('calls');if(lied)dbg('hits');const Lp=G.players[last.who];Lp.claims++;if(lied)Lp.lies++;stamp(lied?'MENSONGE':'VÉRITÉ',lied);if(lied)SND.sting();else SND.chime();await sleep(1600);G.acting=false;return lied?last.who:cur}
 async function reshuffleHands(deck,dead){const al=G.players.filter(p=>p.alive&&p.hand.length);if(!al.length)return;const n=al.map(p=>p.hand.length),pool=deck.splice(0);pool.push(...dead);for(const p of al)pool.push(...p.hand.splice(0));shuffle(pool);
   al.forEach((p,k)=>{p.hand=pool.splice(0,n[k])});deck.push(...pool);if(G.device&&G.device.kn)G.device.kn.und=deck.length;bcHands('redeal');await redealFx()}
@@ -1160,8 +1162,9 @@ function buildTags(){const c=$('#tags');c.innerHTML='';for(let i=0;i<5;i++){cons
   updateMe.v=null}
 function updateTags(){for(let i=0;i<5;i++){const p=G.players[i],d=p.tag;if(!d)continue;d.classList.toggle('active',G.actor===i&&p.alive);d.classList.toggle('dead',!p.alive);d.classList.toggle('targetable',G.ui==='target'&&p.alive);
   d.querySelector('.hands').innerHTML=lifeHTML(p);d.querySelector('.meta').innerHTML=G.lobby3d?`<span>${p.lobTag||''}</span>`:p.alive?`<span><i class="cb"></i>×${G.game==='liar'?p.hand.length:p.cards.length}</span>${p.claims?`<span class="lie">mens. ${p.lies}/${p.claims}</span>`:''}${G.extra[i]?'<span class="sab">✂️×2</span>':''}`:'<span>a quitté la table</span>'}}
-function placeTags(){const L=!!G.lobby3d,arr=[];for(let i=0;i<5;i++){const p=G.players[i],r=RIGS[i];if(!p||!p.tag||!r)continue;if(p.absent||r.fp){p.tag.style.display='none';continue}const s=toScreen(rigTagAnchor(r));if(!s){p.tag.style.display='none';continue}p.tag.style.display='';
+function placeTags(){const L=!!G.lobby3d,arr=[];placeTags.lt=L?-1:lookTarget(G.view);for(let i=0;i<5;i++){const p=G.players[i],r=RIGS[i];if(!p||!p.tag||!r)continue;if(p.absent||r.fp){p.tag.style.display='none';continue}const s=toScreen(rigTagAnchor(r));if(!s||(!L&&(s[0]<-60||s[0]>CAM.w+60))){p.tag.style.display='none';continue}p.tag.style.display='';
   const x=clamp(s[0],44,CAM.w-44),y=clamp(s[1],L?40:CAM.h>CAM.w?118:60,CAM.h);p.tag.classList.toggle('me',L&&!!p.lobMe);p.tag.classList.toggle('al',x<CAM.w*.28);p.tag.classList.toggle('ar',x>CAM.w*.72);
+  p.tag.classList.toggle('lk',!L&&i===placeTags.lt);
   if(L)arr.push({p,x,y:Math.min(y,(placeTags.top||CAM.h*(CAM.h>CAM.w?.7:.66))-56)});else p.tag.style.transform=`translate(${x}px,${y}px) translate(-50%,-100%)`}
   if(L){arr.sort((a,b)=>a.x-b.x);for(let k=1;k<arr.length;k++)if(arr[k].x-arr[k-1].x<96&&Math.abs(arr[k].y-arr[k-1].y)<38)arr[k].y=arr[k-1].y-40;for(const a of arr)a.p.tag.style.transform=`translate(${a.x}px,${a.y}px) translate(-50%,6px)`}}
 function updateMe(){const p=G.players[G.view]||G.players[0],me=$('#me');$('#meName').textContent=YOU(p.i)?ME():p.name;{const ak=p.i+p.persona.mask;if(updateMe.v!==ak){updateMe.v=ak;$('#meAva').innerHTML=avatarSVG(p.persona.mask,p.color)}}me.classList.toggle('active',G.actor===G.view&&p.alive);me.classList.toggle('dead',!p.alive);$('#meHands').innerHTML=lifeHTML(p);
@@ -1234,7 +1237,7 @@ const gi=p.cards.indexOf('gant');
   render();await sleep(1700);
   if(p.hands<=0){p.alive=false;G.out.push(v);SND.sting();log(`${B(S(v))} ${V(v,'quitte','quittes')} la table.`);toast(YOU(v)?'TU QUITTES LA TABLE':`${p.name.toUpperCase()} QUITTE LA TABLE`,1800);render();await sleep(1800)}}
 async function showIntro(d){const el=$('#intro');el.innerHTML=`<div class="in-k">Manche ${G.round}</div><div class="in-n">${d.name}</div><div class="in-r">${d.rule}</div><div class="in-t">touche pour commencer</div>`;
-  el.classList.add('show');SND.intro();if(G.online)await sleep(2400);else if(G.autoplay||G.spectate||!anyHumanAlive())await sleep(1600);else await waitIntro(12000);el.classList.remove('show');await sleep(300)}
+  el.classList.add('show');SND.intro();if(G.online)await sleep(2400);else if(G.autoplay||G.spectate||!anyHumanAlive())await sleep(1600);else await waitIntro(12000);el.classList.remove('show');await sleep(300);try{if(!G.autoplay&&!localStorage.getItem('mainbasse.tipLook')){localStorage.setItem('mainbasse.tipLook','1');setTimeout(()=>toast('👆 Glisse le doigt sur l’écran pour regarder autour de la table',3600),2600)}}catch(e){}}
 async function playRound(starter){G.round++;G.extra={};G.actor=-1;G.focus=-1;
   if(G.device){SCENE.remove(G.device.g)}G.device=FACT[nextDeviceType()]();setTimeout(()=>{SND.thud();CAM.shake=Math.max(CAM.shake,.3)},140);
   if(G.round>1)G.players.forEach(p=>{if(p.alive)giveCard(p.i)});render();await showIntro(G.device);
@@ -1261,7 +1264,7 @@ async function runGame(){try{if(G.game==='liar'){await (G.online==='guest'?runGu
 function resetWorld(){for(const r of RIGS)if(r)SCENE.remove(r.root);RIGS=[];for(const p of PARTS)SCENE.remove(p.n);PARTS.length=0;if(G.device){SCENE.remove(G.device.g);G.device=null}
   genTableCanvas(TEX.table.cv);tableDirty=true}
 function startGame(cfg){TOKEN++;NET.wait={};if(pending){const p=pending;pending=null;try{p.rej(ABORT)}catch(e){}}stopHeart();
-  wakeOn();G.lobby3d=false;document.body.classList.remove('inlobby');let ps;G.ocWho=null;OC.open=false;OC.res=null;clearTurnTimer();if(cfg){G.perm=cfg.perm;G.freeCall=!!cfg.freeCall;G.animals=cfg.animals||[4,0,1,2,3];G.rule='gun';ps=cfg.players.map((c,i)=>{const P=PERSONAS[G.animals[i]];if(i===0)return{i:0,name:c.name,isHuman:true,remote:!!c.remote,persona:Object.assign({},P,{lines:{}}),color:P.color};return{i,name:c.isHuman?c.name:P.name,isHuman:!!c.isHuman,remote:!!c.remote,absent:!!c.absent,persona:c.isHuman?Object.assign({},P,{lines:{}}):P,color:P.color}})}else{
+  wakeOn();lookReset();CAM.ly=CAM.lp=0;G.lobby3d=false;document.body.classList.remove('inlobby');let ps;G.ocWho=null;OC.open=false;OC.res=null;clearTurnTimer();if(cfg){G.perm=cfg.perm;G.freeCall=!!cfg.freeCall;G.animals=cfg.animals||[4,0,1,2,3];G.rule='gun';ps=cfg.players.map((c,i)=>{const P=PERSONAS[G.animals[i]];if(i===0)return{i:0,name:c.name,isHuman:true,remote:!!c.remote,persona:Object.assign({},P,{lines:{}}),color:P.color};return{i,name:c.isHuman?c.name:P.name,isHuman:!!c.isHuman,remote:!!c.remote,absent:!!c.absent,persona:c.isHuman?Object.assign({},P,{lines:{}}):P,color:P.color}})}else{
   const mh=G.humans>1,tot=mh?Math.min(5,G.humans+(G.bots||0)):5,st={2:[0,3],3:[0,1,4],4:[0,1,3,4],5:[0,1,2,3,4]}[tot],hs=[0,...shuffle(st.slice(1)).slice(0,G.humans-1)],hn={};shuffle(hs.map((_,k)=>k+1)).forEach((n,k)=>hn[hs[k]]=n);G.perm=shuffle([0,1,2,3]);G.rule=G.game==='liar'?'gun':(G.ruleSel||G.rule);G.animals=[G.myAnimal,...shuffle(AN_ALL.filter(a=>a!==G.myAnimal))].slice(0,5);const P0=PERSONAS[G.animals[0]];ps=[{i:0,name:mh?nmOf(hn[0]):'Toi',isHuman:true,persona:Object.assign({},P0,{lines:{}}),color:P0.color}];[0,1,2,3].forEach(k=>{const P=PERSONAS[G.animals[k+1]],h=hs.includes(k+1);ps.push({i:k+1,name:h?nmOf(hn[k+1]):P.name,isHuman:h,absent:!st.includes(k+1),persona:h?Object.assign({},P,{lines:{}}):P,color:P.color})})}
   ps.forEach(p=>Object.assign(p,{hands:2,bullet:ri(0,5),shots:0,cards:[],hand:[],alive:!p.absent,grudge:[0,0,0,0,0],claims:0,lies:0}));
   $('#stage').classList.remove('sus');G.sus=0;Object.assign(G,{players:ps,lsel:[],lcan:{},llast:null,view:cfg?cfg.me:0,me:cfg?cfg.me:0,round:0,actor:-1,focus:-1,extra:{},out:[],spectate:false,cardLocked:false,ui:'',logs:[],acting:false,selCard:-1,lastType:null,bag:[],paused:false});G.speed=G.baseSpeed;
@@ -1281,6 +1284,8 @@ function updCam(t,dt){const asp=CAM.w/CAM.h;{const lb=!!G.lobby3d;if(TBLN.lb!==l
   const cph=Math.cos(CAM.phi),sph=Math.sin(CAM.phi),RY=p=>[p[0]*cph+p[2]*sph,p[1],-p[0]*sph+p[2]*cph];
   {const a=G.actor,rel=(a>=0&&a!==CAM.seat&&!dead&&SEATS[a])?(SEATS[a][0]*cph-SEATS[a][2]*sph)*.17:0;CAM.ax=(CAM.ax||0)+(rel-(CAM.ax||0))*(1-Math.exp(-2.2*dt));tg[0]+=CAM.ax}CAM.punch=(CAM.punch||0)*Math.exp(-5*dt);CAM.lift=(CAM.lift||0)+((CAM.arr?0:1)-(CAM.lift||0))*(1-Math.exp(-4*dt));pos[1]+=.14*CAM.lift;tg[1]+=.08*CAM.lift;pos=RY(pos);tg=RY(tg);if(G.device&&mine){const d=wp(G.device.g,[0,.15,0]);tg=V3.lerp(tg,d,.35*CAM.z)}
   CAM.sus=(CAM.sus||0)+((G.sus||0)-(CAM.sus||0))*(1-Math.exp(-(G.sus?2.8:6)*dt));for(const r of RIGS)if(r){r.fp=r.i===CAM.seat&&CAM.arr&&!(G.susWho===r.i&&CAM.sus>.03)&&G.players[r.i].isHuman;r.tp=!r.fp}if(CAM.sus>.01){const w=G.susWho;if(w===CAM.seat){const k=ease(clamp(CAM.sus*1.7,0,1));pos=V3.lerp(pos,RY([.9,1.52,.3]),k);tg=V3.lerp(tg,RY([0,1.36,1.56]),k)}else if(RIGS[w])tg=V3.lerp(tg,wp(RIGS[w].face),.85*CAM.sus);const tr=CAM.sus*.004;pos[0]+=(rand()-.5)*tr;pos[1]+=(rand()-.5)*tr}
+  {if(G.sus||(mine&&!CAM.wasMine))lookReset();CAM.wasMine=mine;const kk=1-Math.exp(-(G.sus?8:16)*dt);CAM.ly=(CAM.ly||0)+((CAM.lyT||0)-(CAM.ly||0))*kk;CAM.lp=(CAM.lp||0)+((CAM.lpT||0)-(CAM.lp||0))*kk;
+    if(Math.abs(CAM.ly)>1e-4||Math.abs(CAM.lp)>1e-4){const d=V3.sub(tg,pos),c=Math.cos(CAM.ly),sn=Math.sin(CAM.ly),L=Math.hypot(d[0],d[2]);tg=[pos[0]+d[0]*c+d[2]*sn,pos[1]+d[1]+CAM.lp*L,pos[2]-d[0]*sn+d[2]*c]}}
   CAM.pos=pos;CAM.view=M4.lookAt(pos,tg,[0,1,0]);CAM.proj=M4.persp(fov*(1-.42*CAM.sus)*(1+.1*CAM.punch),asp,.08,30);M4.mul(CAM.proj,CAM.view,CAM.vp)}
 let last=now();
 function frame(ts){const dt=Math.min(.05,Math.max(0,(ts-last)/1000));last=ts;const t=ts/1000;
@@ -1322,7 +1327,17 @@ function renderScene(){OP.length=0;TRN.length=0;collect(SCENE);shadowPass();gl.v
     for(const n of TRN){gl.blendFunc(gl.SRC_ALPHA,n.mat.add?gl.ONE:gl.ONE_MINUS_SRC_ALPHA);drawNode(n)}gl.depthMask(true);gl.disable(gl.BLEND)}}
 
 /* ================= EVENTS ================= */
-glc.addEventListener('pointerdown',e=>{const r=glc.getBoundingClientRect();const x=e.clientX-r.left,y=e.clientY-r.top;if(G.device&&G.device.tap)G.device.tap(x,y)});
+const DRAG={id:null,x:0,y:0,sx:0,sy:0,moved:false,lastTap:0,lx:0,ly:0};
+function lookBy(dy,dp){if(G.lobby3d||G.sus||!G.players.length)return;CAM.lyT=clamp((CAM.lyT||0)+dy,-.7,.7);CAM.lpT=clamp((CAM.lpT||0)+dp,-.28,.36)}
+function lookReset(){CAM.lyT=0;CAM.lpT=0}
+function lookTarget(v){if(G.lobby3d||v!==CAM.seat||Math.abs(CAM.ly||0)<.06)return -1;let best=-1,bd=1e9;for(const q of G.players){if(!q.alive||q.absent||q.i===v||!RIGS[q.i])continue;const sc=toScreen(wp(RIGS[q.i].face));if(!sc||sc[0]<-30||sc[0]>CAM.w+30)continue;const d=Math.abs(sc[0]-CAM.w/2);if(d<bd){bd=d;best=q.i}}return best}
+glc.addEventListener('pointerdown',e=>{if(DRAG.id!=null)return;DRAG.id=e.pointerId;DRAG.x=DRAG.sx=e.clientX;DRAG.y=DRAG.sy=e.clientY;DRAG.moved=false;try{glc.setPointerCapture(e.pointerId)}catch(_){}});
+glc.addEventListener('pointermove',e=>{if(e.pointerId!==DRAG.id)return;if(!DRAG.moved){if(Math.hypot(e.clientX-DRAG.sx,e.clientY-DRAG.sy)<9)return;DRAG.moved=true;glc.classList.add('drag');DRAG.x=e.clientX;DRAG.y=e.clientY;return}
+  const k=1.7/Math.max(320,CAM.w);lookBy((e.clientX-DRAG.x)*k,(e.clientY-DRAG.y)*k*.55);DRAG.x=e.clientX;DRAG.y=e.clientY});
+const dragEnd=e=>{if(e.pointerId!==DRAG.id)return;DRAG.id=null;glc.classList.remove('drag');try{glc.releasePointerCapture(e.pointerId)}catch(_){}if(e.type==='pointercancel'||DRAG.moved)return;
+  const r=glc.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top,tn=now(),off=Math.abs(CAM.lyT||0)>.06||Math.abs(CAM.lpT||0)>.06;
+  if(off&&tn-DRAG.lastTap<330&&Math.hypot(x-DRAG.lx,y-DRAG.ly)<44){lookReset();DRAG.lastTap=0;return}DRAG.lastTap=tn;DRAG.lx=x;DRAG.ly=y;if(G.device&&G.device.tap)G.device.tap(x,y)};
+glc.addEventListener('pointerup',dragEnd);glc.addEventListener('pointercancel',dragEnd);
 $('#intro').addEventListener('click',()=>giveInput('intro'));
 $('#controls').addEventListener('pointerdown',e=>{const b=e.target.closest('[data-pass],[data-brake]');if(!b||!humanCanAct()||!G.device)return;e.preventDefault();
   if(b.dataset.pass!=null&&G.device.phaseNow)giveInput('turn',{type:'action',data:{phase:G.device.phaseNow()}});
@@ -1342,10 +1357,10 @@ $('#cards').addEventListener('click',e=>{const b=e.target.closest('.card');if(!b
 $('#cardInfo').addEventListener('click',e=>{if(e.target.id==='playCard'&&canPlayCard()){const k=G.selCard;G.selCard=-1;giveInput('turn',{type:'card',idx:k})}});
 document.querySelectorAll('.mode').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.mode').forEach(x=>x.classList.toggle('on',x===b));const m=+b.dataset.h;$('#hc').hidden=m<2;$('#nbBtn').hidden=m<2;G.humans=m<2?1:+($('#hc .on').dataset.n);nbUpd()}));
 document.querySelectorAll('#hc .btn').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#hc .btn').forEach(x=>x.classList.toggle('on',x===b));G.humans=+b.dataset.n;nbUpd()}));
-$('#aimBtn').addEventListener('click',()=>{const v=G.view,r=RIGS[v],p=G.players[v];if(!r||!p||!p.alive||!r.gunN||G.sus)return;const o=G.players.filter(q=>q.alive&&q.i!==v);if(!o.length)return;const tg=(G.actor>=0&&G.actor!==v&&G.players[G.actor].alive)?G.actor:pick(o).i;threaten(v,tg,2200);netFx('aim',v,tg)});
-$('#fkBtn').addEventListener('click',()=>{const v=G.view,r=RIGS[v],p=G.players[v];if(!r||!p||!p.alive)return;r.fuckUntil=now()+1900;SND.card();netFx('fk',v,-1);const bots=G.players.filter(q=>q.alive&&!q.isHuman);if(!bots.length)return;
-  const tg=(G.actor>0&&!isHm(G.actor)&&G.players[G.actor].alive)?G.players[G.actor]:pick(bots);tg.grudge[v]+=.5;const rr=RIGS[tg.i];rr.lookCamUntil=now()+1800;log(`${B(S(v))} ${V(v,'fait','fais')} un doigt d’honneur à ${B(tg.name)}.`);
-  const tk=TOKEN;setTimeout(()=>{if(tk!==TOKEN)return;say(tg.i,pick(['Malpoli.','Oh !','Tu vas le regretter.','Charmant.','…']));if(rand()<.45)rr.fuckUntil=now()+1600},500)});
+$('#aimBtn').addEventListener('click',()=>{const v=G.view,r=RIGS[v],p=G.players[v];if(!r||!p||!p.alive||!r.gunN||G.sus)return;const o=G.players.filter(q=>q.alive&&q.i!==v);if(!o.length)return;const lt=lookTarget(v),tg=lt>=0?lt:(G.actor>=0&&G.actor!==v&&G.players[G.actor].alive)?G.actor:pick(o).i;threaten(v,tg,2200);netFx('aim',v,tg)});
+$('#fkBtn').addEventListener('click',()=>{const v=G.view,r=RIGS[v],p=G.players[v];if(!r||!p||!p.alive)return;const lt=lookTarget(v);r.fuckUntil=now()+1900;r.fkT=lt>=0?lt:null;if(lt>=0){r.glT=lt;r.glU=r.fuckUntil}SND.card();netFx('fk',v,lt);const bots=G.players.filter(q=>q.alive&&!q.isHuman);if(!bots.length)return;
+  const tg=lt>=0?(G.players[lt].isHuman?null:G.players[lt]):(G.actor>0&&!isHm(G.actor)&&G.players[G.actor].alive)?G.players[G.actor]:pick(bots);if(!tg)return;tg.grudge[v]+=.5;const rr=RIGS[tg.i];rr.lookCamUntil=now()+1800;log(`${B(S(v))} ${V(v,'fait','fais')} un doigt d’honneur à ${B(tg.name)}.`);
+  const tk=TOKEN;setTimeout(()=>{if(tk!==TOKEN)return;say(tg.i,pick(['Malpoli.','Oh !','Tu vas le regretter.','Charmant.','…']));if(rand()<.45){rr.fuckUntil=now()+1600;rr.fkT=v}},500)});
 const namesUI=()=>{const n=G.humans;$('#names').innerHTML=Array.from({length:n},(_,k)=>`<input class="nm-in" data-k="${k}" maxlength="12" autocomplete="off" placeholder="${n===1?'Ton nom (facultatif)':'Joueur '+(k+1)}" value="${G.names[k]||''}">`).join('')};
 $('#names').addEventListener('input',e=>{const k=+e.target.dataset.k;G.names[k]=e.target.value.replace(/[^\p{L}\p{N} _\-]/gu,'').slice(0,12).trim();if(k===0)saveProfile()});
 const nbUpd=()=>{namesUI();G.bots=Math.min(G.bots,5-G.humans);$('#nbBtn').innerHTML='🤖 Robots en plus&nbsp;: '+G.bots};
@@ -1372,12 +1387,13 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&G.players
 let WL=null;async function wakeOn(){try{if('wakeLock' in navigator&&!WL){WL=await navigator.wakeLock.request('screen');WL.addEventListener('release',()=>{WL=null})}}catch(e){}}
 function wakeOff(){try{WL&&WL.release()}catch(e){}WL=null}
 function saveProfile(){try{localStorage.setItem('mainbasse.profile',JSON.stringify({n:G.names[0]||'',a:G.myAnimal}))}catch(e){}}
-document.addEventListener('keydown',e=>{const tg=e.target;if(tg&&/^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName))return;if(e.metaKey||e.ctrlKey||e.altKey||e.repeat)return;if(document.querySelector('.ov.show'))return;const k=(e.key||'').toLowerCase();
+document.addEventListener('keydown',e=>{const tg=e.target;if(tg&&/^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName))return;if(e.metaKey||e.ctrlKey||e.altKey)return;if(document.querySelector('.ov.show'))return;const k=(e.key||'').toLowerCase();if(e.repeat&&k!=='arrowleft'&&k!=='arrowright')return;
   if(G.ui==='liar'){if(k>='1'&&k<='5'&&k.length===1){const idx=+k-1,p=G.players[G.view];if(G.lcan.play&&p&&idx<p.hand.length){const j=G.lsel.indexOf(idx);if(j>=0)G.lsel.splice(j,1);else if(G.lsel.length<3)G.lsel.push(idx);SND.card();render()}e.preventDefault()}
     else if((k==='enter'||k===' ')&&G.lcan.play&&G.lsel.length){e.preventDefault();giveInput('liar',{cards:G.lsel.slice()})}
     else if(k==='m'&&G.lcan.call)giveInput('liar',{call:true});
     else if(k==='n'&&G.lcan.next)giveInput('liar',{next:true})}
   else if(G.ui==='ready'&&(k==='enter'||k===' ')){e.preventDefault();giveInput('ready',1)}
+  if(k==='arrowleft'){e.preventDefault();lookBy(.32,0)}else if(k==='arrowright'){e.preventDefault();lookBy(-.32,0)}else if(k==='arrowdown'||k==='arrowup'){e.preventDefault();lookReset()}
   else if(k==='m'&&G.game==='liar'&&G.players.length&&ocEligibleMe())ocClick()});
 
 
@@ -1391,7 +1407,7 @@ function connOf(seat){return NET.conns.find(c=>NET.seatOf[c.id]===seat)}
 function bcHands(t,extra){if(G.online!=='host')return;for(const c of NET.conns){const seat=NET.seatOf[c.id];c.send(Object.assign({t,hands:G.players.map((p,i)=>i===seat?p.hand.slice():p.hand.map(()=>'?'))},extra||{}))}}
 function bcPlay(who,cs,seq){if(G.online!=='host')return;for(const c of NET.conns)c.send({t:'play',who,seq,cards:NET.seatOf[c.id]===who?cs.slice():cs.map(()=>'?')})}
 function netFx(k,who,tg){const m={t:'fx',k,who,tg};if(G.online==='host')bc(m);else if(G.online==='guest'&&NET.host)NET.host.send(m)}
-function applyFx(m){const r=RIGS[m.who];if(!r||!G.players[m.who]||!G.players[m.who].alive)return;if(m.k==='fk'){r.fuckUntil=now()+1900}else if(m.k==='aim'&&G.players[m.tg]&&G.players[m.tg].alive)threaten(m.who,m.tg,2200)}
+function applyFx(m){const r=RIGS[m.who];if(!r||!G.players[m.who]||!G.players[m.who].alive)return;if(m.k==='fk'){r.fuckUntil=now()+1900;const t=m.tg;r.fkT=Number.isInteger(t)&&t>=0&&t<5&&t!==m.who&&G.players[t]&&G.players[t].alive?t:null;if(r.fkT!=null){r.glT=r.fkT;r.glU=r.fuckUntil}}else if(m.k==='aim'&&G.players[m.tg]&&G.players[m.tg].alive)threaten(m.who,m.tg,2200)}
 function okDec(p,dec,last,forced,fin){if(!dec||typeof dec!=='object')return null;if(dec.call&&last)return{call:true};if(dec.next&&fin)return{next:true};
   if(Array.isArray(dec.cards)&&!forced&&!fin){const c=[...new Set(dec.cards)].filter(k=>Number.isInteger(k)&&k>=0&&k<p.hand.length);if(c.length>=1&&c.length<=3)return{cards:c}}return null}
 function loadPeer(){return new Promise((res,rej)=>{if(window.Peer)return res();const urls=['https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js','https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js'];let k=0;
@@ -1562,7 +1578,7 @@ let ok=false;try{ok=glInit();if(ok)initWorld()}catch(e){console.error(e);ok=fals
 try{const jc=(new URLSearchParams(location.search).get('j')||'').toUpperCase().replace(/[^A-Z]/g,'');if(jc.length===4){showJoin(jc);history.replaceState(null,'',location.pathname+location.hash)}}catch(e){}
 if(!ok){$('#nogl').style.display='flex'}
 requestAnimationFrame(frame);
-if(DBG)window.__MB={NET,SND,headshot,GUNF:()=>GUN,M4,gunTrial,toScreen,wp,G,startGame,RIGS:()=>RIGS,PARTS,CAM,LSEATS};
+if(DBG)window.__MB={lookBy,lookReset,NET,SND,headshot,GUNF:()=>GUN,M4,gunTrial,toScreen,wp,G,startGame,RIGS:()=>RIGS,PARTS,CAM,LSEATS};
 })();
 </script>
 </body>
