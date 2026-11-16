@@ -295,6 +295,9 @@ header{gap:clamp(3px,1.4vw,7px)}
 #tcBadge.pop{animation:tcpop .7s ease}
 @keyframes tcpop{0%{transform:translateY(-50%) scale(1.6)}60%{transform:translateY(-50%) scale(.95)}100%{transform:translateY(-50%) scale(1)}}
 @media (min-width:900px) and (min-height:561px) and (min-aspect-ratio:1/1){#tcBadge{left:16px;padding:9px 12px}#tcBadge i{width:46px;height:62px;font-size:36px}#tcBadge b{font-size:21px}#tcBadge small{font-size:10px!important}}
+#ocBtn{position:absolute;z-index:12;right:max(12px,env(safe-area-inset-right));top:46%;transform:translateY(-50%);display:none;flex-direction:column;align-items:center;padding:12px 16px;font-size:18px;letter-spacing:1px;background:linear-gradient(#8a1c1c,#4a0a0a);border:2px solid #ff6a4a;color:#ffe9d0;box-shadow:0 0 22px rgba(255,80,50,.55);animation:ocp 1.1s ease-in-out infinite}
+#ocBtn small{font-size:10px;opacity:.8;letter-spacing:0;text-transform:none;margin-top:2px}#ocBtn.show{display:flex}
+@keyframes ocp{50%{box-shadow:0 0 34px rgba(255,80,50,.85);transform:translateY(-50%) scale(1.04)}}
 </style>
 </head>
 <body>
@@ -316,6 +319,7 @@ header{gap:clamp(3px,1.4vw,7px)}
   <div id="stage">
     <canvas id="gl"></canvas>
     <div id="tags"></div>
+    <button id="ocBtn" class="btn">⚡ MENTEUR&nbsp;!<small>avant tout le monde</small></button>
     <div id="tcBadge"></div>
     <div id="intro"></div>
     <div id="toast"></div>
@@ -355,7 +359,7 @@ header{gap:clamp(3px,1.4vw,7px)}
     <div id="hc" hidden>Joueurs humains&nbsp;:<button class="btn on" data-n="2">2</button><button class="btn" data-n="3">3</button><button class="btn" data-n="4">4</button><button class="btn" data-n="5">5</button></div>
     <div class="apick" id="tPick"></div>
     <div id="names"></div>
-    <div class="opts"><button class="btn" id="nbBtn" hidden>🤖 Robots en plus&nbsp;: 0</button><button class="btn" id="fsTitle">⛶ Plein écran</button><button class="btn" id="infBtn">♾️ Infini&nbsp;: non</button></div>
+    <div class="opts"><button class="btn" id="nbBtn" hidden>🤖 Robots en plus&nbsp;: 0</button><button class="btn" id="fsTitle">⛶ Plein écran</button><button class="btn" id="infBtn">♾️ Infini&nbsp;: non</button><button class="btn" id="fcBtn">⚡ Menteur libre&nbsp;: non</button></div>
     <button class="btn big" id="startBtn">S’asseoir à la table</button>
     <div class="modes" style="margin-top:10px"><button class="btn" id="onCreate">🌐 Créer une partie en ligne<small>tu reçois un code à donner</small></button><button class="btn" id="onJoin">🔑 Rejoindre une partie<small>avec le code d’un ami</small></button></div>
     <div class="t-foot" id="record">Son conseillé · se joue au doigt</div>
@@ -401,7 +405,7 @@ const PI=Math.PI,TAU=PI*2;
 
 /* ================= STATE ================= */
 const G={players:[],round:0,device:null,actor:-1,focus:-1,extra:{},speed:1,baseSpeed:1,out:[],spectate:false,cardLocked:false,ui:'',logs:[],
-  autoplay:false,acting:false,selCard:-1,lastType:null,bag:[],paused:false,forceType:null,names:[],online:null,me:0,myAnimal:4,animals:[4,0,1,2,3],lobby3d:false,lob:{},perm:[0,1,2,3],humans:1,view:0,game:'liar',bots:0,endless:false,score:{},lsel:[],lcan:{},llast:null,rule:'gun',noRender:false};
+  autoplay:false,acting:false,selCard:-1,lastType:null,bag:[],paused:false,forceType:null,names:[],online:null,me:0,myAnimal:4,animals:[4,0,1,2,3],lobby3d:false,lob:{},perm:[0,1,2,3],humans:1,view:0,game:'liar',bots:0,endless:false,freeCall:false,ocWho:null,turnTok:0,score:{},lsel:[],lcan:{},llast:null,rule:'gun',noRender:false};
 let TOKEN=0;const ABORT=new Error('abort');ABORT.abort=true;
 function sleep(ms){const t=TOKEN;return new Promise((res,rej)=>{const go=()=>{if(TOKEN!==t)return rej(ABORT);if(G.paused)return setTimeout(go,150);res()};setTimeout(go,ms/G.speed)})}
 function prog(t0,dur){return clamp((now()-t0)*G.speed/dur,0,1)}
@@ -1373,9 +1377,23 @@ async function liarBot(i,last,forced,d,fin){await sleep(700+rand()*800);const p=
   if(fin)return{next:true};
   if(good.length===0||(bad.length>0&&rand()<P.lie*.6))return{cards:shuffle(bad.slice()).slice(0,Math.min(bad.length,rand()<.65?1:2))};
   return{cards:good.slice(0,Math.min(good.length,rand()<.6?1:rand()<.8?2:3))}}
-async function liarHuman(i,last,forced,fin){if(G.online==='host'&&G.players[i].remote){G.llast=last;render();const tk=TOKEN;const dec=await new Promise(res=>{NET.wait[i]={res,tk}});return okDec(G.players[i],dec,last,forced,fin)||await liarBot(i,last,forced,G.device,fin)}
-  if(G.autoplay)return liarBot(i,last,fin?false:forced,G.device,fin);if(!G.online){G.view=i;G.focus=i}G.llast=last;if(G.humans>1&&!G.online){G.ui='ready';await waitInput('ready')}
-  G.lsel=[];G.lcan={call:!!last,play:!forced,next:!!fin};G.ui='liar';const inp=await waitInput('liar');G.ui='';G.lsel=[];render();return inp}
+async function liarHuman(i,last,forced,fin){const tok=G.turnTok;if(G.online==='host'&&G.players[i].remote){G.llast=last;render();const tk=TOKEN;const dec=await new Promise(res=>{NET.wait[i]={res,tk}});return okDec(G.players[i],dec,last,forced,fin)||await liarBot(i,last,forced,G.device,fin)}
+  if(G.autoplay)return liarBot(i,last,fin?false:forced,G.device,fin);if(!G.online){G.view=i;G.focus=i}G.llast=last;if(G.humans>1&&!G.online){G.ui='ready';await waitInput('ready');if(tok!==G.turnTok){G.ui='';render();return{cancel:true}}}
+  if(tok!==G.turnTok)return{cancel:true};G.lsel=[];G.lcan={call:!!last,play:!forced,next:!!fin};G.ui='liar';const inp=await waitInput('liar');G.ui='';G.lsel=[];render();return inp}
+const OC={open:false,last:null,cur:-1,res:null};
+function ocOpen(last,cur){OC.open=true;OC.last=last;OC.cur=cur;return new Promise(res=>{OC.res=res})}
+function ocOk(i){if(!OC.open||!G.freeCall||!OC.last)return false;const p=G.players[i];return!!(p&&p.alive&&!p.absent&&i!==OC.last.who&&i!==OC.cur)}
+function ocTry(i){if(!ocOk(i))return false;window.__oc=(window.__oc||0)+1;OC.open=false;const r=OC.res;OC.res=null;r&&r(i);return true}
+function ocMe(){return G.online?G.me:(G.humans===1?0:-1)}
+function ocEligibleMe(){const me=ocMe();if(me<0||!G.freeCall||G.ui==='liar')return false;const p=G.players[me];if(!p||!p.alive)return false;
+  if(G.online==='guest')return G.ocWho!=null&&G.ocWho!==me&&G.actor!==me&&!G.acting;return OC.open&&ocOk(me)}
+function ocClick(){const me=ocMe();if(G.online==='guest'){if(NET.host)NET.host.send({t:'ocall'});G.ocWho=null;render();return}ocTry(me)}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#ocBtn');if(b){e.preventDefault();ocClick()}});
+function ocBots(last,cur,d){const tk=TOKEN;for(const p of G.players){const j=p.i;if(!p.alive||p.absent||p.isHuman||j===last.who||j===cur)continue;
+    const P=p.persona||{},good=p.hand.filter(c=>c===d.tc||c==='J').length,lp=G.players[last.who];
+    const sus=.06+.12*(last.cards.length-1)+.07*good+(P.cruelty||.4)*.1+(lp.hand.length===0?.15:0)+Math.min(.12,(lp.lies||0)*.04);
+    if(rand()<sus*.75)setTimeout(()=>{if(tk!==TOKEN||!OC.open||OC.last!==last)return;if(ocTry(j))say(j,'Menteur !')},(350+rand()*1700)/Math.max(.5,G.speed))}}
+function cancelTurn(i){G.turnTok++;G.ui='';G.lsel=[];stopHeart&&stopHeart();giveInput('liar',{cancel:true});giveInput('ready',{cancel:true});const w=NET.wait&&NET.wait[i];if(w){delete NET.wait[i];w.res({cancel:true})}render()}
 async function runLiar(){const d=G.device=Menteur();setTimeout(()=>{SND.thud();CAM.shake=Math.max(CAM.shake,.3)},140);G.focus=-1;let starter=pick(G.players.filter(p=>p.alive)).i;G.round=1;render();await showIntro(d);G.round=0;
   while(aliveCount()>1){G.round++;d.clear();const nA=G.players.filter(p=>p.alive).length,need=Math.max(20,nA*5),nJ=need>20?4:2,per=Math.ceil((need-nJ)/3),deck=shuffle([...'R'.repeat(per)+'D'.repeat(per)+'A'.repeat(per)+'J'.repeat(nJ)]);G.players.forEach(p=>{p.hand=p.alive?deck.splice(0,5):[]});d.setTable(pick(['R','D','A']));bc({t:'round',round:G.round,tc:d.tc,hands:G.players.map(p=>p.hand.slice())});SND.card();G.actor=-1;G.llast=null;render();toast(`Manche ${G.round} — table&nbsp;: ${LK[d.tc][1]}`,1600);await sleep(1500);
     let cur=starter,last=null,stopAt=-1;
@@ -1383,10 +1401,15 @@ async function runLiar(){const d=G.device=Menteur();setTimeout(()=>{SND.thud();C
     if(!G.players[cur].alive||!G.players[cur].hand.length)cur=adv(cur);
     while(cur>=0&&aliveCount()>1){const P=G.players[cur];if(last&&last.who===cur)last=null;G.actor=cur;render();
       const withC=G.players.filter(p=>p.alive&&p.hand.length);const forced=!!last&&withC.length===1&&stopAt<0;bc({t:'turn',a:cur,forced,fin:false,last:last?{who:last.who,n:last.cards.length}:null});
-      const dec=P.isHuman?await liarHuman(cur,last,forced):await liarBot(cur,last,forced,d);
-      if(dec.call&&last){bc({t:'call',who:cur});const shot=await liarCall(cur,last,d);const dh=G.players[shot].hand.slice();
+      let dec,caller=-1;
+      if(G.freeCall&&last){const oc=ocOpen(last,cur);ocBots(last,cur,d);render();const pd=P.isHuman?liarHuman(cur,last,forced):sleep(1000).then(()=>liarBot(cur,last,forced,d));
+        const r=await Promise.race([pd.then(x=>({dec:x})),oc.then(i=>({oc:i}))]);OC.open=false;OC.res=null;
+        if(r.oc!=null){caller=r.oc;cancelTurn(cur);toast(`⚡ ${YOU(caller)?ME():NM(caller)} ${YOU(caller)?'cries':'crie'} «&nbsp;Menteur&nbsp;» !`,1400)}else dec=r.dec}
+      else dec=P.isHuman?await liarHuman(cur,last,forced):await liarBot(cur,last,forced,d);
+      if(caller<0&&dec&&dec.cancel)dec=await liarBot(cur,last,forced,d);
+      if((caller>=0||dec.call)&&last){const cw=caller>=0?caller:cur;bc({t:'call',who:cw,ooc:caller>=0});const shot=await liarCall(cw,last,d);const dh=G.players[shot].hand.slice();
         await liarShot(shot);if(aliveCount()<=1)break;if(!G.players[shot].alive)await reshuffleHands(deck,dh);d.clear();bc({t:'clear'});last=null;G.llast=null;
-        cur=stopAt>=0?adv(cur):adv(shot);continue}
+        if(G.freeCall)cur=(G.players[cur].alive&&G.players[cur].hand.length&&cur!==stopAt)?cur:adv(cur);else cur=stopAt>=0?adv(cur):adv(shot);continue}
       const cs=(dec.cards||[0]).slice().sort((a,b)=>b-a).map(k=>P.hand.splice(k,1)[0]);bc({t:'play',who:cur,cards:cs});G.acting=true;render();rigReach(RIGS[cur],()=>wp(d.g,[0,.08,.1]));await sleep(380);d.playCards(cur,cs);SND.card();SND.slide();
       if(P.isHuman)toast(`${YOU(cur)?ME():P.name}&nbsp;: «&nbsp;${claimTxt(cs.length,d.tc)}&nbsp;»`,1300);else say(cur,claimTxt(cs.length,d.tc));await sleep(700);rigRelease(RIGS[cur]);G.acting=false;last={who:cur,cards:cs};render();await sleep(450);
       if(!P.hand.length&&stopAt<0){stopAt=cur;bc({t:'lastlap',who:cur});SND.bell();toast(`${S(cur)} ${V(cur,'a','as')} vidé sa main — dernier tour&nbsp;!`,1900);await sleep(1500)}
@@ -1465,7 +1488,7 @@ function renderHint(){const h=$('#hint');let top='',sub='',sm='';const d=G.devic
   else if(G.actor>=0&&G.players[G.actor]&&G.players[G.actor].alive)sub=isHm(G.actor)?'…':`${G.players[G.actor].name} ${G.acting?'agit':'réfléchit'}…`;
   h.innerHTML=(top?`<span class="you">${top}</span>`:'')+sub+(sm?`<span class="sm">${sm}</span>`:'')}
 function renderControls(){if(G.game==='liar'){$('#controls').innerHTML=liarControls();return}$('#controls').innerHTML=G.ui==='target'?G.players.filter(p=>p.alive&&p.i!==G.actor).map(p=>`<button class="btn" data-target="${p.i}">${YOU(p.i)?ME():p.name}</button>`).join(''):(G.device&&G.device.controls?G.device.controls():'')}
-function render(){if(!G.players.length)return;updMic();$('#app').classList.toggle('liar',G.game==='liar');updateTags();updateMe();renderCards();renderControls();renderHint();{const hh=$('#hint');hh.classList.toggle('mine',hh.innerHTML.startsWith('<span class="you"'))}$('#roundLbl').innerHTML=G.device?`Manche ${G.round}<br>${G.device.name}`:''}
+function render(){if(!G.players.length)return;{const ob=$('#ocBtn');if(ob)ob.classList.toggle('show',G.game==='liar'&&ocEligibleMe())}updMic();$('#app').classList.toggle('liar',G.game==='liar');updateTags();updateMe();renderCards();renderControls();renderHint();{const hh=$('#hint');hh.classList.toggle('mine',hh.innerHTML.startsWith('<span class="you"'))}$('#roundLbl').innerHTML=G.device?`Manche ${G.round}<br>${G.device.name}`:''}
 
 /* ================= FLOW ================= */
 function pickTarget(i){const P=G.players[i].persona;let best=-1,bs=-1e9;for(const p of G.players){if(!p.alive||p.i===i)continue;const s=G.players[i].grudge[p.i]*1.5+(p.isHuman?P.humanBias:0)+p.hands*.4+rand()*.8;if(s>bs){bs=s;best=p.i}}return best}
@@ -1543,7 +1566,7 @@ async function runGame(){try{if(G.game==='liar'){await (G.online==='guest'?runGu
 function resetWorld(){for(const r of RIGS)if(r)SCENE.remove(r.root);RIGS=[];for(const p of PARTS)SCENE.remove(p.n);PARTS.length=0;if(G.device){SCENE.remove(G.device.g);G.device=null}
   genTableCanvas(TEX.table.cv);tableDirty=true}
 function startGame(cfg){TOKEN++;NET.wait={};if(pending){const p=pending;pending=null;try{p.rej(ABORT)}catch(e){}}stopHeart();
-  G.lobby3d=false;document.body.classList.remove('inlobby');let ps;if(cfg){G.perm=cfg.perm;G.animals=cfg.animals||[4,0,1,2,3];G.rule='gun';ps=cfg.players.map((c,i)=>{const P=PERSONAS[G.animals[i]];if(i===0)return{i:0,name:c.name,isHuman:true,remote:!!c.remote,persona:Object.assign({},P,{lines:{}}),color:P.color};return{i,name:c.isHuman?c.name:P.name,isHuman:!!c.isHuman,remote:!!c.remote,absent:!!c.absent,persona:c.isHuman?Object.assign({},P,{lines:{}}):P,color:P.color}})}else{
+  G.lobby3d=false;document.body.classList.remove('inlobby');let ps;G.ocWho=null;OC.open=false;if(cfg){G.perm=cfg.perm;G.freeCall=!!cfg.freeCall;G.animals=cfg.animals||[4,0,1,2,3];G.rule='gun';ps=cfg.players.map((c,i)=>{const P=PERSONAS[G.animals[i]];if(i===0)return{i:0,name:c.name,isHuman:true,remote:!!c.remote,persona:Object.assign({},P,{lines:{}}),color:P.color};return{i,name:c.isHuman?c.name:P.name,isHuman:!!c.isHuman,remote:!!c.remote,absent:!!c.absent,persona:c.isHuman?Object.assign({},P,{lines:{}}):P,color:P.color}})}else{
   const mh=G.humans>1,tot=mh?Math.min(5,G.humans+(G.bots||0)):5,st={2:[0,3],3:[0,1,4],4:[0,1,3,4],5:[0,1,2,3,4]}[tot],hs=[0,...shuffle(st.slice(1)).slice(0,G.humans-1)],hn={};shuffle(hs.map((_,k)=>k+1)).forEach((n,k)=>hn[hs[k]]=n);G.perm=shuffle([0,1,2,3]);G.rule=G.game==='liar'?'gun':(G.ruleSel||G.rule);G.animals=[G.myAnimal,...shuffle(AN_ALL.filter(a=>a!==G.myAnimal))].slice(0,5);const P0=PERSONAS[G.animals[0]];ps=[{i:0,name:mh?nmOf(hn[0]):'Toi',isHuman:true,persona:Object.assign({},P0,{lines:{}}),color:P0.color}];[0,1,2,3].forEach(k=>{const P=PERSONAS[G.animals[k+1]],h=hs.includes(k+1);ps.push({i:k+1,name:h?nmOf(hn[k+1]):P.name,isHuman:h,absent:!st.includes(k+1),persona:h?Object.assign({},P,{lines:{}}):P,color:P.color})})}
   ps.forEach(p=>Object.assign(p,{hands:2,bullet:ri(0,5),shots:0,cards:[],hand:[],alive:!p.absent,grudge:[0,0,0,0,0],claims:0,lies:0}));
   $('#stage').classList.remove('sus');G.sus=0;Object.assign(G,{players:ps,lsel:[],lcan:{},llast:null,view:cfg?cfg.me:0,me:cfg?cfg.me:0,round:0,actor:-1,focus:-1,extra:{},out:[],spectate:false,cardLocked:false,ui:'',logs:[],acting:false,selCard:-1,lastType:null,bag:[],paused:false});G.speed=G.baseSpeed;
@@ -1636,6 +1659,7 @@ $('#names').addEventListener('input',e=>{const k=+e.target.dataset.k;G.names[k]=
 const nbUpd=()=>{namesUI();G.bots=Math.min(G.bots,5-G.humans);$('#nbBtn').innerHTML='🤖 Robots en plus&nbsp;: '+G.bots};
 $('#nbBtn').addEventListener('click',()=>{G.bots=(G.bots+1)%(5-G.humans+1);nbUpd()});
 $('#infBtn').addEventListener('click',()=>{G.endless=!G.endless;$('#infBtn').innerHTML='♾️ Infini&nbsp;: '+(G.endless?'oui':'non')});
+$('#fcBtn').addEventListener('click',()=>{G.freeCall=!G.freeCall;$('#fcBtn').innerHTML='⚡ Menteur libre&nbsp;: '+(G.freeCall?'oui':'non');toast(G.freeCall?'Menteur libre : tout le monde peut crier «&nbsp;Menteur&nbsp;» à tout moment. Le premier qui crie gagne la main.':'Menteur libre désactivé',2600)});
 $('#startBtn').addEventListener('click',()=>{G.score={};SND.init();$('#title').classList.remove('show');startGame()});
 $('#end').addEventListener('click',e=>{if(e.target.id==='watchBtn'){$('#end').classList.remove('show');giveInput('defeat','watch')}else if(e.target.id==='menuBtn'){NET.close();TOKEN++;if(pending){const p=pending;pending=null;try{p.rej(ABORT)}catch(_){}}$('#end').classList.remove('show');$('#title').classList.add('show')}else if(e.target.id==='againBtn'){SND.init();$('#end').classList.remove('show');restart()}});
 $('#sndBtn').addEventListener('click',()=>{SND.init();SND.setOn(!SND.on);$('#sndBtn').textContent=SND.on?'🔊':'🔇'});
@@ -1692,7 +1716,7 @@ function lobbyHTML(){const L=NET.lobby,hst=NET.role==='host',tot=L.length+G.bots
    <div class="hub-sel"><small>Changer de personnage</small><div><button class="hs" data-sel="-1">‹</button><b>${ANIMALS[mine].e} ${ANIMALS[mine].n}</b><button class="hs" data-sel="1">›</button></div></div>
    <div class="hub-bot">
     <div class="lobrow">Pseudo&nbsp;: <input id="lobName" class="nm-in" maxlength="12" autocomplete="off" style="flex:0 1 160px" value="${myName().replace(/["<>&]/g,'')}"></div>
-    ${hst?`<div class="lobrow"><button class="btn" data-lb="-">−</button>Robots&nbsp;: ${G.bots}<button class="btn" data-lb="+">+</button></div>`:'<div class="lobrow" style="opacity:.75">⏳ L’hôte lancera la partie</div>'}
+    ${hst?`<div class="lobrow"><button class="btn" data-lb="-">−</button>Robots&nbsp;: ${G.bots}<button class="btn" data-lb="+">+</button><button class="btn" id="lobFc">⚡ Menteur libre&nbsp;: ${G.freeCall?'oui':'non'}</button></div>`:`<div class="lobrow" style="opacity:.75">⏳ L’hôte lancera la partie${G.freeCall?' · ⚡ Menteur libre':''}</div>`}
     <div class="lobrow">${BC?'':`<button class="btn" id="lobMic">${micLabel()}</button>`}<button class="btn" id="lobInv">👥 Inviter</button></div>
    </div></div>`}
 function inviteFriends(){const url=location.href.split('#')[0],txt=`Rejoins ma partie de Main Basse : touche « Rejoindre une partie » et tape le code ${NET.code}`;
@@ -1722,7 +1746,7 @@ const cleanName=v=>String(v||'').replace(/[^\p{L}\p{N} _\-]/gu,'').slice(0,12).t
 function setMyName(v){v=cleanName(v);if(!v)return;G.names[0]=v;document.querySelectorAll('.nm-in[data-k="0"]').forEach(i=>i.value=v);if(NET.role==='host'){NET.lobby[0].name=v;drawLobby();pushLobby()}else if(NET.role==='guest'&&NET.host)NET.host.send({t:'name',name:v})}
 function lobbyMsg(html){$('#lobbyIn').innerHTML=html;$('#lobby').classList.add('show','solid')}
 function botPool(){if(!NET.botPool||NET.botPool.length!==ANIMALS.length)NET.botPool=shuffle(AN_ALL.slice());return NET.botPool}
-function pushLobby(){const names=NET.lobby.map(p=>p.name);NET.vids={};if(NET.vpeer)NET.vids[NET.vpeer.id]=1;for(const c of NET.conns)NET.vids[c.id]=1;const animals=NET.lobby.map(p=>p.animal),ready=NET.lobby.map(p=>!!p.ready);for(const c of NET.conns)c.send({t:'lobby',names,animals,ready,pool:botPool(),bots:G.bots,code:NET.code,you:NET.lobby.findIndex(p=>p.conn===c),vids:NET.vids});voiceCallAll()}
+function pushLobby(){const names=NET.lobby.map(p=>p.name);NET.vids={};if(NET.vpeer)NET.vids[NET.vpeer.id]=1;for(const c of NET.conns)NET.vids[c.id]=1;const animals=NET.lobby.map(p=>p.animal),ready=NET.lobby.map(p=>!!p.ready);for(const c of NET.conns)c.send({t:'lobby',names,animals,ready,pool:botPool(),fc:!!G.freeCall,bots:G.bots,code:NET.code,you:NET.lobby.findIndex(p=>p.conn===c),vids:NET.vids});voiceCallAll()}
 async function createOnline(){SND.init();NET.close();NET.closing=false;G.bots=0;lobbyMsg('<div class="e-t">Connexion…</div><div class="e-s">Création de la partie.</div>');
   let srv=null,code='';for(let k=0;k<4&&!srv;k++){code=Array.from({length:4},()=>'ABCDEFGHJKMNPQRSTUVWXYZ'[ri(0,22)]).join('');try{srv=await hostServer(code)}catch(e){if(e&&e.type!=='unavailable-id')break}}
   if(!srv){lobbyMsg('<div class="e-t">Connexion impossible</div><div class="e-s">Vérifie ta connexion internet et réessaie.</div><button class="btn big" id="lobQuit">Retour</button>');return}
@@ -1733,6 +1757,7 @@ function hostMsg(c,m){if(!m||typeof m!=='object')return;
   if(m.t==='ready'){const e=NET.lobby.find(p=>p.conn===c);if(e){e.ready=!!m.on;drawLobby();pushLobby()}return}
   if(m.t==='animal'){const e=NET.lobby.find(p=>p.conn===c),a=m.a;if(e&&Number.isInteger(a)&&a>=0&&a<ANIMALS.length&&!NET.lobby.some(p=>p!==e&&p.animal===a)){e.animal=a;G.bots=Math.min(G.bots,5-NET.lobby.length)}drawLobby();pushLobby();return}
   if(m.t==='name'){const e=NET.lobby.find(p=>p.conn===c),v=cleanName(m.name);if(e&&v){e.name=v;if(G.online==='host'){const st=NET.seatOf[c.id];if(st!=null){G.players[st].name=v;buildTags();render()}}else drawLobby();pushLobby()}return}
+  if(m.t==='ocall'){const seat=NET.seatOf[c.id];window.__ocr=(window.__ocr||0)+1;if(seat!=null&&ocTry(seat))window.__ocg=(window.__ocg||0)+1;return}
   if(m.t==='dec'){const seat=NET.seatOf[c.id],w=NET.wait[seat];if(w&&w.tk===TOKEN){delete NET.wait[seat];w.res(m.dec)}return}
   if(m.t==='fx'){const seat=NET.seatOf[c.id];if(seat==null||m.who!==seat)return;applyFx(m);bc(m)}
   if(m.t==='spk'){const seat=NET.seatOf[c.id];if(seat==null)return;VOICE.spk[seat]=!!m.on;bc({t:'spk',who:seat,on:!!m.on})}}
@@ -1745,8 +1770,8 @@ function hostLaunch(){if(NET.role!=='host')return;const humans=NET.lobby.slice()
   NET.seatOf={};const animals=[humans[0].animal,null,null,null,null];humans.slice(1).forEach((h,k)=>{const seat=gs[k];players[seat]={name:h.name,isHuman:true,remote:true};NET.seatOf[h.conn.id]=seat;animals[seat]=h.animal});
   {const used=new Set(humans.map(h=>h.animal)),free=botPool().filter(a=>!used.has(a));for(let i=1;i<5;i++)if(animals[i]==null&&!players[i].absent)animals[i]=free.shift();for(let i=1;i<5;i++)if(animals[i]==null)animals[i]=free.shift()}
   G.online='host';$('#lobby').classList.remove('show');$('#title').classList.remove('show');$('#end').classList.remove('show');
-  for(const h of humans.slice(1))h.conn.send({t:'start',cfg:{perm,players,animals,me:NET.seatOf[h.conn.id]}});
-  startGame({perm,players,animals,me:0})}
+  for(const h of humans.slice(1))h.conn.send({t:'start',cfg:{perm,players,animals,freeCall:!!G.freeCall,me:NET.seatOf[h.conn.id]}});
+  startGame({perm,players,animals,freeCall:!!G.freeCall,me:0})}
 function restart(){if(G.online==='host')hostLaunch();else if(!G.online)startGame()}
 async function joinOnline(code){code=(code||'').toUpperCase().replace(/[^A-Z]/g,'');if(code.length!==4){$('.lerr').textContent='Le code fait 4 lettres.';return}
   SND.init();NET.close();NET.closing=false;lobbyMsg('<div class="e-t">Connexion…</div><div class="e-s">Recherche de la partie '+code+'.</div>');
@@ -1755,26 +1780,27 @@ async function joinOnline(code){code=(code||'').toUpperCase().replace(/[^A-Z]/g,
   c.send({t:'join',name:myName(),animal:G.myAnimal})}
 function guestMsg(m){if(!m||typeof m!=='object')return;
   if(m.t==='full'){NET.close();showJoin(NET.code,'La partie est pleine ou déjà commencée.');return}
-  if(m.t==='lobby'){NET.lobby=m.names.map((n,k)=>({name:n,me:k===m.you,animal:(x=>Number.isInteger(x)&&x>=0&&x<ANIMALS.length?x:4)((m.animals||[])[k]),ready:!!(m.ready||[])[k]}));G.bots=m.bots;if(Array.isArray(m.pool)&&m.pool.length===ANIMALS.length)NET.botPool=m.pool.map(x=>+x|0);NET.vids=m.vids||{};voiceCallAll();if(G.online!=='guest')drawLobby();return}
+  if(m.t==='lobby'){NET.lobby=m.names.map((n,k)=>({name:n,me:k===m.you,animal:(x=>Number.isInteger(x)&&x>=0&&x<ANIMALS.length?x:4)((m.animals||[])[k]),ready:!!(m.ready||[])[k]}));G.bots=m.bots;G.freeCall=!!m.fc;if(Array.isArray(m.pool)&&m.pool.length===ANIMALS.length)NET.botPool=m.pool.map(x=>+x|0);NET.vids=m.vids||{};voiceCallAll();if(G.online!=='guest')drawLobby();return}
   if(m.t==='start'){NET.q=[];NET.qw=null;G.online='guest';$('#lobby').classList.remove('show');$('#title').classList.remove('show');$('#end').classList.remove('show');startGame(m.cfg);return}
   if(m.t==='fx'){applyFx(m);return}
   if(m.t==='spk'){if(m.who!==G.me)VOICE.spk[m.who]=!!m.on;return}
+  if(m.t==='call'&&m.ooc){G.turnTok++;giveInput('liar',{cancel:true});giveInput('ready',{cancel:true})}
   NET.q.push(m);if(NET.qw){const w=NET.qw;NET.qw=null;w()}}
 function nextMsg(){const t=TOKEN;return new Promise((res,rej)=>{const go=()=>{if(TOKEN!==t)return rej(ABORT);if(NET.q.length)return res(NET.q.shift());NET.qw=go};go()})}
 async function runGuest(){const d=G.device=Menteur();setTimeout(()=>{SND.thud();CAM.shake=Math.max(CAM.shake,.3)},140);G.focus=-1;G.round=1;render();await showIntro(d);G.round=0;let last=null;
   for(;;){const m=await nextMsg();if(m.t==='end')break;
     if(m.t==='round'){G.round=m.round;d.clear();G.players.forEach((p,i)=>p.hand=(m.hands[i]||[]).slice());d.setTable(m.tc);SND.card();G.actor=-1;G.llast=null;last=null;render();toast(`Manche ${G.round} — table&nbsp;: ${LK[d.tc][1]}`,1600);await sleep(1500)}
     else if(m.t==='turn'){if(!m.last)last=null;G.actor=m.a;G.focus=m.a;G.llast=last;render();
-      if(m.a===G.me&&G.players[G.me].alive){let dec;if(G.autoplay)dec=await liarBot(G.me,last,m.forced,d,m.fin);else{G.lsel=[];G.lcan={call:!!last,play:!m.forced,next:!!m.fin};G.ui='liar';render();startHeart();try{dec=await waitInput('liar')}finally{stopHeart()}G.ui='';G.lsel=[];render()}NET.host&&NET.host.send({t:'dec',dec})}}
-    else if(m.t==='play'){const P=G.players[m.who],cs=m.cards;for(const c of cs){const k=P.hand.indexOf(c);if(k>=0)P.hand.splice(k,1);else P.hand.pop()}G.acting=true;render();rigReach(RIGS[m.who],()=>wp(d.g,[0,.08,.1]));await sleep(380);d.playCards(m.who,cs);SND.card();SND.slide();
+      if(m.a===G.me&&G.players[G.me].alive){let dec;if(G.autoplay)dec=await liarBot(G.me,last,m.forced,d,m.fin);else{G.lsel=[];G.lcan={call:!!last,play:!m.forced,next:!!m.fin};G.ui='liar';render();startHeart();try{dec=await waitInput('liar')}finally{stopHeart()}G.ui='';G.lsel=[];render()}if(!(dec&&dec.cancel))NET.host&&NET.host.send({t:'dec',dec})}}
+    else if(m.t==='play'){G.ocWho=m.who;const P=G.players[m.who],cs=m.cards;for(const c of cs){const k=P.hand.indexOf(c);if(k>=0)P.hand.splice(k,1);else P.hand.pop()}G.acting=true;render();rigReach(RIGS[m.who],()=>wp(d.g,[0,.08,.1]));await sleep(380);d.playCards(m.who,cs);SND.card();SND.slide();
       if(P.isHuman)toast(`${YOU(m.who)?ME():P.name}&nbsp;: «&nbsp;${claimTxt(cs.length,d.tc)}&nbsp;»`,1300);else say(m.who,claimTxt(cs.length,d.tc));await sleep(700);rigRelease(RIGS[m.who]);G.acting=false;last={who:m.who,cards:cs};G.llast=last;render();await sleep(450)}
-    else if(m.t==='call'){if(last)await liarCall(m.who,last,d)}
+    else if(m.t==='call'){G.ocWho=null;render();if(last)await liarCall(m.who,last,d)}
     else if(m.t==='shot'){const p=G.players[m.who];p.bullet=m.bang?p.shots:99;G.actor=m.who;render();toast(`🔫 ${YOU(m.who)?'À TOI DE TIRER':NM(m.who).toUpperCase()}`,1300);await sleep(900);
       if(await gunTrial(m.who))await kill(m.who);else await sleep(600);render()}
-    else if(m.t==='clear'){d.clear();last=null;G.llast=null}
+    else if(m.t==='clear'){d.clear();last=null;G.llast=null;G.ocWho=null}
     else if(m.t==='redeal'){G.players.forEach((p,i)=>p.hand=(m.hands[i]||[]).slice());await redealFx()}
     else if(m.t==='lastlap'){SND.bell();toast(`${S(m.who)} ${V(m.who,'a','as')} vidé sa main — dernier tour&nbsp;!`,1900);await sleep(1500)}
-    else if(m.t==='roundEnd'){toast('Fin de la manche',1200);await sleep(1100)}}}
+    else if(m.t==='roundEnd'){G.ocWho=null;toast('Fin de la manche',1200);await sleep(1100)}}}
 function showJoin(code,err){lobbyMsg(`<div class="e-k">Rejoindre une partie</div><div class="e-t">Code de la partie</div>
   <input id="joinCode" maxlength="4" autocomplete="off" autocapitalize="characters" placeholder="ABCD" value="${code||''}"><div class="lerr">${err||''}</div>
   <div class="e-s">Ton nom&nbsp;: <b>${myName().replace(/[<>&]/g,'')}</b> (modifiable sur l’écran d’accueil)</div>
@@ -1786,6 +1812,7 @@ $('#lobby').addEventListener('click',e=>{const t=e.target.closest('button');if(!
   if(t.dataset.an!=null){pickAnimal(+t.dataset.an);return}
   if(t.dataset.sel){const me=NET.role==='host'?NET.lobby[0]:NET.lobby.find(p=>p.me)||{};const taken=new Set(NET.lobby.filter(p=>p!==me).map(p=>p.animal));let k=me.animal==null?G.myAnimal:me.animal;const NA=ANIMALS.length;for(let n=0;n<NA;n++){k=(k+(+t.dataset.sel)+NA)%NA;if(!taken.has(k))break}pickAnimal(k);return}
   if(t.id==='lobInv'){inviteFriends();return}
+  if(t.id==='lobFc'){G.freeCall=!G.freeCall;drawLobby();pushLobby();return}
   if(t.id==='lobReady'){const me=NET.lobby.find(p=>p.me);if(me){me.ready=!me.ready;NET.host&&NET.host.send({t:'ready',on:me.ready});drawLobby()}return}
   if(t.id==='lobMic'){micToggle().then(()=>{const b=$('#lobMic');if(b)b.innerHTML=micLabel()});return}
   if(t.id==='lobGo'){hostLaunch();return}
