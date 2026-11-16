@@ -1384,8 +1384,8 @@ async function runLiar(){const d=G.device=Menteur();setTimeout(()=>{SND.thud();C
     while(cur>=0&&aliveCount()>1){const P=G.players[cur];if(last&&last.who===cur)last=null;G.actor=cur;render();
       const withC=G.players.filter(p=>p.alive&&p.hand.length);const forced=!!last&&withC.length===1&&stopAt<0;bc({t:'turn',a:cur,forced,fin:false,last:last?{who:last.who,n:last.cards.length}:null});
       const dec=P.isHuman?await liarHuman(cur,last,forced):await liarBot(cur,last,forced,d);
-      if(dec.call&&last){bc({t:'call',who:cur});const shot=await liarCall(cur,last,d);
-        await liarShot(shot);if(aliveCount()<=1)break;d.clear();bc({t:'clear'});last=null;G.llast=null;
+      if(dec.call&&last){bc({t:'call',who:cur});const shot=await liarCall(cur,last,d);const dh=G.players[shot].hand.slice();
+        await liarShot(shot);if(aliveCount()<=1)break;if(!G.players[shot].alive)await reshuffleHands(deck,dh);d.clear();bc({t:'clear'});last=null;G.llast=null;
         cur=stopAt>=0?adv(cur):adv(shot);continue}
       const cs=(dec.cards||[0]).slice().sort((a,b)=>b-a).map(k=>P.hand.splice(k,1)[0]);bc({t:'play',who:cur,cards:cs});G.acting=true;render();rigReach(RIGS[cur],()=>wp(d.g,[0,.08,.1]));await sleep(380);d.playCards(cur,cs);SND.card();SND.slide();
       if(P.isHuman)toast(`${YOU(cur)?ME():P.name}&nbsp;: «&nbsp;${claimTxt(cs.length,d.tc)}&nbsp;»`,1300);else say(cur,claimTxt(cs.length,d.tc));await sleep(700);rigRelease(RIGS[cur]);G.acting=false;last={who:cur,cards:cs};render();await sleep(450);
@@ -1398,6 +1398,9 @@ async function runLiar(){const d=G.device=Menteur();setTimeout(()=>{SND.thud();C
     bc({t:'roundEnd'});toast('Fin de la manche',1200);await sleep(1100);starter=nextAlive(stopAt>=0?stopAt:starter)}}
 async function liarCall(cur,last,d){const P=G.players[cur];G.acting=true;render();stamp('MENTEUR !',true);SND.wrong();if(!P.isHuman)say(cur,'Menteur !');gesture(cur,last.who,1300);{const r=RIGS[cur];if(r){r.fuckUntil=now()+1900/Math.max(1,G.speed*.7);r.glT=last.who;r.glU=r.fuckUntil}}await sleep(1200);d.reveal(last.cards.length);SND.card();await sleep(1200);
   const lied=last.cards.some(c=>c!==d.tc&&c!=='J');const Lp=G.players[last.who];Lp.claims++;if(lied)Lp.lies++;stamp(lied?'MENSONGE':'VÉRITÉ',lied);if(lied)SND.sting();else SND.chime();await sleep(1600);G.acting=false;return lied?last.who:cur}
+async function reshuffleHands(deck,dead){const al=G.players.filter(p=>p.alive&&p.hand.length);if(!al.length)return;const n=al.map(p=>p.hand.length),pool=deck.splice(0);pool.push(...dead);for(const p of al)pool.push(...p.hand.splice(0));shuffle(pool);
+  al.forEach((p,k)=>{p.hand=pool.splice(0,n[k])});deck.push(...pool);bc({t:'redeal',hands:G.players.map(p=>p.hand.slice())});await redealFx()}
+async function redealFx(){window.__rd=(window.__rd||0)+1;SND.card();setTimeout(()=>SND.slide(),180);setTimeout(()=>SND.card(),360);toast('🔀 Les cartes sont rebattues',1500);render();await sleep(1300)}
 async function liarShot(shot){bc({t:'shot',who:shot,bang:G.players[shot].shots===G.players[shot].bullet});G.actor=shot;render();toast(`🔫 ${YOU(shot)?'À TOI DE TIRER':NM(shot).toUpperCase()}`,1300);if(!G.players[shot].isHuman)say(shot,line(shot,'scared'));await sleep(900);
   if(await gunTrial(shot)){await kill(shot);if(aliveCount()<=1)return;
     if(!anyHumanAlive()&&!G.spectate){const ch=G.autoplay?'watch':await showDefeatMid();if(ch==='watch'){G.spectate=true;G.speed=Math.max(2.6,G.speed);render()}}}
@@ -1769,6 +1772,7 @@ async function runGuest(){const d=G.device=Menteur();setTimeout(()=>{SND.thud();
     else if(m.t==='shot'){const p=G.players[m.who];p.bullet=m.bang?p.shots:99;G.actor=m.who;render();toast(`🔫 ${YOU(m.who)?'À TOI DE TIRER':NM(m.who).toUpperCase()}`,1300);await sleep(900);
       if(await gunTrial(m.who))await kill(m.who);else await sleep(600);render()}
     else if(m.t==='clear'){d.clear();last=null;G.llast=null}
+    else if(m.t==='redeal'){G.players.forEach((p,i)=>p.hand=(m.hands[i]||[]).slice());await redealFx()}
     else if(m.t==='lastlap'){SND.bell();toast(`${S(m.who)} ${V(m.who,'a','as')} vidé sa main — dernier tour&nbsp;!`,1900);await sleep(1500)}
     else if(m.t==='roundEnd'){toast('Fin de la manche',1200);await sleep(1100)}}}
 function showJoin(code,err){lobbyMsg(`<div class="e-k">Rejoindre une partie</div><div class="e-t">Code de la partie</div>
