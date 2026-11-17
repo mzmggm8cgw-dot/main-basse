@@ -390,7 +390,7 @@ header{gap:clamp(3px,1.4vw,7px)}
 <script>
 (()=>{
 'use strict';
-const BUILD=202611171530;
+const BUILD=202611171607;
 const $=s=>document.querySelector(s);
 const rand=Math.random;
 const ri=(a,b)=>a+Math.floor(rand()*(b-a+1));
@@ -1182,12 +1182,12 @@ function smokeJet(o,dir,n,sz){for(let k=0;k<n&&SMOKE.length<120;k++){const m=mat
   SMOKE.push({n:nd,m,v:[dir[0]*sp+gauss()*.07,dir[1]*sp+gauss()*.06+.03,dir[2]*sp+gauss()*.07],life:1,rate:.38+rand()*.16,s,grow:.3,a0:.36,dr:1.5})}}
 function cigWisp(o){if(SMOKE.length>=100)return;const m=mat('#aaa299',{tex:TEX.glow,unlit:true,o:0}),s=.012,nd=SCENE.add(N(MS.plane,m,[o[0],o[1],o[2]],null,s));SMOKE.push({n:nd,m,v:[gauss()*.015,.12+rand()*.08,gauss()*.015],life:1,rate:.5,s,grow:.045,a0:.12})}
 function cigSet(i,on,quiet){const r=RIGS[i];if(!r||!r.v2)return;on=!!on;if(!!r.cig===on)return;r.cig=on;const tn=now();if(!on)cigLightEnd(r,true);if(quiet&&!on)return;
-  if(on){r.pfT0=tn+3200;r.pfTg=null;r.pfS=1;r.cigNx=tn+12000+rand()*6000;r.cigEnd=tn+45000+rand()*50000;if(!r.stand&&!G.lobby3d)cigLight(r);else{r.cgLit=tn+700;SND.lighter()}}
+  if(on){r.pfT0=tn+3200;r.pfTg=null;r.pfS=1;r.cigNx=tn+12000+rand()*6000;r.cigEnd=tn+45000+rand()*50000;if(!r.stand&&!G.lobby3d&&!r.gripGun&&!(G.sus&&G.susWho===r.i))cigLight(r);else{r.cgLit=tn+700;SND.lighter()}}
   else{const g=r.fp&&CIG.fp?CIG.fp:r.cigN;if(g&&g.tipN)puff(wp(g.tipN),3,false);SND.stub()}}
 function cigPuff(i,tg){const r=RIGS[i];if(!r||!r.cig)return false;const tn=now();if(tn<(r.pfT0||0)+2500)return false;r.pfT0=tn;r.pfS=0;r.pfTg=Number.isInteger(tg)&&tg>=0&&tg<5&&tg!==i&&RIGS[tg]&&G.players[tg]&&G.players[tg].alive?tg:null;SND.drag(i===G.view?1:.5);return true}
 function frontTarget(i){const r=RIGS[i];if(!r)return -1;if(i===G.view&&r.fp){const lt=lookTarget(i);if(lt>=0)return lt}let best=-1,bs=-2;const B=r.fp?fpLocal(r):null;
   for(const q of G.players){if(!q.alive||q.absent||q.i===i||!RIGS[q.i])continue;const o=B?B.C:V3.add(r.body.p,[0,.6,0]),d=V3.norm(V3.sub(toLocal(r,rigHeadW(RIGS[q.i])),o)),f=B?V3.norm([B.F[0],0,B.F[2]]):[0,0,1],sc=d[0]*f[0]+d[2]*f[2];if(sc>bs){bs=sc;best=q.i}}return best}
-function cigTap(long){const v=G.view,r=RIGS[v],p=G.players[v];if(!r||!p||!p.alive||!r.v2||G.lobby3d||r.stand)return;
+function cigTap(long){const v=G.view,r=RIGS[v],p=G.players[v];if(!r||!p||!p.alive||!r.v2||G.lobby3d||r.stand)return;if(G.sus||GS.T||r.gripGun||(G.acting&&G.actor===v)){toast('🚬 Pas pendant que tu as le revolver en main',1400);return}
   if(!r.cig){if(long)return;cigSet(v,1);netFx('cg',v,-2);log(`${B(S(v))} ${V(v,'allume','allumes')} un cigare.`);if(!CIG.tip){CIG.tip=1;toast('🚬 Appui long&nbsp;: souffler la fumée · touche encore&nbsp;: jeter le cigare',3200)}return}
   if(r.lightT0)return;
   if(!long){const t=frontTarget(v);netFx('cg',v,t>=0?100+t:-4);cigThrow(v,t);return}
@@ -1253,15 +1253,20 @@ function ltrGet(r){if(r.ltr)return r.ltr;const ch=CIG.chr||(CIG.chr=mat('#c4c8cf
   const fl=g.add(N(MS.sphL,mat('#000000',{e:[2.4,1.15,.28],add:true,unlit:true,o:.95}),[.004,.037,0],null,[.0042,.012,.0042]));const co=g.add(N(MS.sphL,mat('#000000',{e:[.35,.55,1.7],add:true,unlit:true,o:.75}),[.004,.03,0],null,[.0022,.005,.0022]));
   const gl=SCENE.add(N(MS.plane,mat('#ffb04a',{tex:TEX.glow,unlit:true,add:true,o:0}),[0,-5,0],null,.1));g.vis=false;gl.vis=false;fl.vis=co.vis=false;return r.ltr={g,lid,fl,co,gl}}
 function cigLight(r){r.lightT0=now();r.lgS=0;r.lgE=0;ltrGet(r);if(!r.cigHd){r.cigHd=cigBuild(SCENE,.1,.0088);r.cigHd.em.e=[.03,.01,0]}r.ltrFn=()=>r.ltrTgt||wp(r.face,[0,-.1,.2]);r.reachT=r.ltrFn;r.reachSide='R';r.reachK=8}
-function cigLightEnd(r,abort){if(!r.lightT0&&!(r.ltr&&r.ltr.g.vis))return;r.lightT0=0;if(r.reachT===r.ltrFn)r.reachT=null;if(r.ltr){r.ltr.g.vis=false;r.ltr.gl.vis=false}if(r.cigHd)r.cigHd.vis=false;if(!abort)r.cgLit=now()+500}
+function cigLightEnd(r,abort){if(!r.lightT0&&!(r.ltr&&r.ltr.g.vis))return;r.lightT0=0;r.ltrQ=null;if(r.reachT===r.ltrFn)r.reachT=null;if(r.ltr){r.ltr.g.vis=false;r.ltr.gl.vis=false}if(r.cigHd)r.cigHd.vis=false;if(!abort)r.cgLit=now()+500}
 function cigLightStep(r,g,fp,tn,t,dt){if(!r.lightT0)return null;r.lgE=(r.lgE||0)+Math.min(dt,.05);const e=r.lgE,L=ltrGet(r),own=r.reachT===r.ltrFn,a=r.arms.R;
   const T1=fp?0:.55,T2=fp?.62:1.05,T3=fp?1.55:2.05,T4=fp?2.05:2.55;
-  if(e>T4||(!own&&e>.05)||!a||!a.alive){cigLightEnd(r,false);return null}
-  const tip=wp(g.tipN),mouth=wp(g),hand=wp(a.hand),fing=wp(a.hand,[0,.004,.08]),off=V3.sub(fing,hand);
-  if(!fp&&e<T1){const d=V3.norm(V3.sub(tip,mouth)),sd=M4.td(r.root.w,[-1,0,0]);r.ltrTgt=V3.sub(V3.add(V3.add(mouth,V3.mul(d,.085)),V3.add(V3.mul(sd,.045),[0,-.025,0])),off)}
-  else{const below=V3.add(tip,[0,-.072,0]),lift=e<T2-.15?.07*(1-clamp((e-(fp?.05:T1))/.35,0,1)):0;r.ltrTgt=V3.sub(V3.add(below,[0,-lift,0]),off);if(e>=T3)r.ltrTgt=V3.sub(V3.add(below,[0,-.09*clamp((e-T3)/.4,0,1),0]),off)}
+  if(e>T4||(!own&&e>.05)||!a||!a.alive||r.gripGun||(G.sus&&G.susWho===r.i)){cigLightEnd(r,false);return null}
+  const tip=wp(g.tipN),mouth=wp(g),hand=wp(a.hand),up=[0,1,0],hs=1.1*((r.L&&r.L.handS)||1),inw=V3.mul(M4.td(r.root.w,[1,0,0]),-a.s);
+  const hz=v=>{const h=[v[0],0,v[2]],l=Math.hypot(h[0],h[2]);return l>1e-4?[h[0]/l,0,h[2]/l]:M4.td(r.root.w,[0,0,1])};
+  const basis=(y,z)=>{const zz=V3.norm(V3.sub(z,V3.mul(y,V3.dot(y,z)))),x=V3.cross(y,zz);return Q.basis(x,y,zz)};
+  let qW,pin;
+  if(!fp&&e<T1){const d=V3.norm(V3.sub(tip,mouth)),dh=hz(d);qW=basis(dh,V3.add(up,V3.mul(inw,.55)));pin=[0,.004,.072];const P=V3.add(V3.add(mouth,V3.mul(d,.09)),V3.add(V3.mul(inw,-.03),[0,-.012,0]));r.ltrPin=P}
+  else{const fw=hz(M4.td(r.root.w,[0,0,1])),z=V3.norm(V3.add(fw,V3.mul(inw,.35))),x=V3.mul(up,-a.s),y=V3.cross(z,x);qW=Q.basis(x,y,z);pin=[0,-.026,.048];let P=V3.add(tip,[0,-.05,0]);const lift=e<T2-.15?.07*(1-clamp((e-(fp?.05:T1))/.35,0,1)):0;P=V3.add(P,[0,-lift,0]);if(e>=T3)P=V3.add(P,[0,-.09*clamp((e-T3)/.4,0,1),0]);r.ltrPin=P}
+  {const pq=r.ltrQ||qW,dd=pq[0]*qW[0]+pq[1]*qW[1]+pq[2]*qW[2]+pq[3]*qW[3],sg=dd<0?-1:1,k=1-Math.exp(-14*Math.min(dt,.05)),q=[pq[0]+(qW[0]*sg-pq[0])*k,pq[1]+(qW[1]*sg-pq[1])*k,pq[2]+(qW[2]*sg-pq[2])*k,pq[3]+(qW[3]*sg-pq[3])*k],l=Math.hypot(q[0],q[1],q[2],q[3])||1;r.ltrQ=[q[0]/l,q[1]/l,q[2]/l,q[3]/l]}
+  const offW=Q.rot(r.ltrQ,V3.mul(pin,hs));r.ltrTgt=V3.sub(r.ltrPin,offW);const fing=V3.add(hand,Q.rot(r.ltrQ,V3.mul(pin,hs)));
   if(r.cigHd){const on=!fp&&e<T1;r.cigHd.vis=on;if(on){const u=V3.sub(mouth,fing),dd=V3.len(u)||1e-4,b=V3.add(fing,V3.mul(u,Math.min(.085,dd)/dd));r.cigHd.p=b;r.cigHd.q=Q.fromTo([0,0,1],V3.norm(V3.sub(fing,b)));r.cigHd.s=[1,1,1]}}
-  const showL=e>(fp?.05:T1+.04)&&e<T4-.05;L.g.vis=showL;if(showL){L.g.p=V3.add(fing,[0,.012,0]);L.g.q=Q.axis([0,1,0],r.ang+(fp?.4:0))}
+  const showL=e>(fp?.05:T1+.04)&&e<T4-.05;L.g.vis=showL;if(showL){L.g.p=fing;L.g.q=Q.axis([0,1,0],r.ang+(fp?.4:0))}
   const open=e>=T2-.1&&e<T3+.06;L.lid.r=[0,0,open?-2.1:0];const fl=e>=T2&&e<T3;L.fl.vis=L.co.vis=fl&&showL;
   if(fl&&showL){const f=1+.22*Math.sin(t*41)+.12*Math.sin(t*67)+.1*(rand()-.5),lean=e>T2+.12?.5:0;L.fl.s=[.0042,.012*f,.0042];L.fl.r=[0,0,-lean*.4];const fp3=wp(L.fl);L.gl.vis=true;L.gl.p=fp3;L.gl.q=CAMQ;const z=.07+.02*f;L.gl.s=[z,z,z];L.gl.mat.o=.55*f;FLAME.k=1;FLAME.p=V3.add(fp3,[0,.02,0]);FLAME.f=f}else L.gl.vis=false;
   const st=r.lgS||0,ev=(k,tt,fn)=>{if(st<k&&e>=tt){r.lgS=k;fn()}};
@@ -1609,6 +1614,7 @@ function rigUpdate(r,dt,t){
     let f=V3.norm(V3.sub(sol.T,sol.E));if(r.isH&&!fk)f=V3.norm(V3.add(f,[0,0,1.2]));if(fk)f=[0,1,0];else if(aimD)f=aimD;else if(sol.T[1]<S[1]-.1){const hl=Math.hypot(f[0],f[2])||1,ov=!r.stand&&!G.lobby3d&&sol.T[1]<TABLE_Y+.16,fy=ov?clamp((TABLE_Y+.012-sol.T[1])/.12,-.55,0):f[1]*.35/Math.max(.3,hl);f=V3.norm([f[0]/hl,fy,f[2]/hl])}
     let q;if(fk){const hb=fkD?V3.norm([fkD[0],0,fkD[2]]):[0,0,1],fu=V3.norm(V3.add([0,1,0],V3.mul(hb,.25))),hx=V3.norm(V3.cross(hb,fu));q=Q.basis(hx,V3.cross(fu,hx),fu)}else{const ref=Math.abs(f[1])>.85?[0,0,1]:[0,1,0];const rx=V3.norm(V3.cross(ref,f)),uy=V3.cross(f,rx);q=Q.basis(rx,uy,f)}
     let hq=q;if(r.gripGun===sd&&GUN&&GUN.vis&&r.reachT){const gq=Q.mul(Q.axis([0,1,0],-r.ang),GUN.q),GX=Q.rot(gq,[1,0,0]),GZ=Q.rot(gq,[0,0,1]),hy=V3.mul(GX,a.s),hz=GZ,hx=V3.cross(hy,hz);hq=Q.basis(hx,hy,hz)}
+    if(r.ltrQ&&r.lightT0&&r.reachT===r.ltrFn&&sd==='R')hq=Q.mul(Q.axis([0,1,0],-r.ang),r.ltrQ);
     if(a.cuff){const fd=V3.norm(V3.sub(sol.T,sol.E));setLimb(a.cuff,V3.sub(sol.T,V3.mul(fd,.062)),V3.sub(sol.T,V3.mul(fd,.014)),a.rw*1.24)}
     a.hand.p=sol.T;a.hand.q=hq;a.stump.p=sol.T;a.stump.q=hq;if(aimD){r.gunN.p=V3.add(V3.add(sol.T,V3.mul(aimD,.08)),[0,.04,0]);r.gunN.q=Q.fromTo([0,0,1],aimD)}
     if(!a.alive&&p.alive&&!G.paused){const bl=tn<r.bleedUntil&&r.bleedSide===sd;if(bl||rand()<.025){spray(M4.tp(r.root.w,sol.T),bl?V3.mul(M4.td(r.root.w,f),1.3):[0,-1,0],bl?Math.round((.5+.5*Math.sin(t*13))*5):1)}}
