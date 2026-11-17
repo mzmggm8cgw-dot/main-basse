@@ -390,7 +390,7 @@ header{gap:clamp(3px,1.4vw,7px)}
 <script>
 (()=>{
 'use strict';
-const BUILD=202611171148;
+const BUILD=202611171218;
 const $=s=>document.querySelector(s);
 const rand=Math.random;
 const ri=(a,b)=>a+Math.floor(rand()*(b-a+1));
@@ -1237,17 +1237,11 @@ function buildHand2(par,m,s,sc,nailC,kind,key){armMeshes();const g=par.add(N(nul
   const th=g.add(N(null,null,[-s*.036,-.004,.03],[0,-s*.8,0]));th.add(N(MS.fSeg,m,[0,0,.013],[PI/2,0,0],[.0114,.03,.0114]));const t2=th.add(N(null,null,[0,0,.027],[.3,0,0]));t2.add(N(MS.sphL,m,[0,0,0],null,.0112));t2.add(N(MS.fSeg,m,[0,0,.011],[PI/2,0,0],[.0104,.025,.0104]));tip(t2,.024,.0104,1);
   return{g,fingers,f2}}
 /* bras qui ne traversent plus la table + gestes en vue subjective */
-function armClear(r,S,sol,a,dt){const tc=r.tcL||(r.tcL=toLocal(r,[0,0,0])),top=TABLE_Y+.024,R2=(TR+.035)**2,inT=p=>(p[0]-tc[0])**2+(p[2]-tc[2])**2<R2;
-  let T=sol.T;if(inT(T)&&T[1]<TABLE_Y+.03)T=[T[0],TABLE_Y+.03,T[2]];const rU=a.kU*.9,rF=a.kF*.82;
-  const clr=E=>{let m=1;for(const s of[.3,.6,.85,1]){const p=V3.lerp(S,E,s);if(inT(p))m=Math.min(m,p[1]-top-rU);const q=V3.lerp(E,T,s);if(inT(q))m=Math.min(m,q[1]-top-rF*(1-.34*s))}return m};
-  const base=T===sol.T?sol:ik(S,T,a.a,a.b,a.pole);T=base.T;
-  const d=V3.sub(T,S),L=V3.len(d)||1e-4,dn=V3.mul(d,1/L),C=V3.add(S,V3.mul(dn,V3.dot(V3.sub(base.E,S),dn))),ev=V3.sub(base.E,C),h=V3.len(ev);
-  let want=0;if(h>1e-4&&clr(base.E)<0){const u=V3.mul(ev,1/h),w=V3.cross(dn,u),find=sg=>{for(let k=1;k<=20;k++){const th=sg*k*.15,E=V3.add(C,V3.add(V3.mul(u,h*Math.cos(th)),V3.mul(w,h*Math.sin(th))));if(clr(E)>=0)return{th,out:E[0]*a.s}}return null};
-    const p1=find(1),p2=find(-1);let pk=null;if(p1&&p2){const pr=a.sg===-1?p2:a.sg===1?p1:null;pk=pr&&Math.abs(pr.th)<=Math.min(Math.abs(p1.th),Math.abs(p2.th))+.6?pr:(Math.abs(Math.abs(p1.th)-Math.abs(p2.th))<.46?(p1.out>=p2.out?p1:p2):(Math.abs(p1.th)<Math.abs(p2.th)?p1:p2))}else pk=p1||p2;
-    if(pk){want=pk.th;a.sg=Math.sign(pk.th)}else want=(a.sg||1)*PI*.5}
-  a.th=(a.th||0)+(want-(a.th||0))*(1-Math.exp(-14*(dt||.016)));if(Math.abs(a.th)<1e-3||h<1e-4)return base;
-  const u=V3.mul(ev,1/h),w=V3.cross(dn,u),E=V3.add(C,V3.add(V3.mul(u,h*Math.cos(a.th)),V3.mul(w,h*Math.sin(a.th))));
-  const m=clr(E);if(m<0&&inT(T)){const T2=[T[0],T[1]-m*.8,T[2]];return{E:V3.add(E,[0,-m*.8,0]),T:T2}}return{E,T}}
+function armClear(r,S,sol,a,dt){const tc=r.tcL||(r.tcL=toLocal(r,[0,0,0])),top=TABLE_Y+.022,R2=(TR+.03)**2,inT=p=>(p[0]-tc[0])**2+(p[2]-tc[2])**2<R2;
+  let T=sol.T;if(inT(T)&&T[1]<TABLE_Y+.035)T=[T[0],TABLE_Y+.035,T[2]];const rU=a.kU*.8,rF=a.kF*.7;
+  const clr=(E,T)=>{let m=1;for(const s of[.35,.7,1]){const p=V3.lerp(S,E,s);if(inT(p))m=Math.min(m,p[1]-top-rU)}for(const s of[.2,.4,.6,.8,1]){const q=V3.lerp(E,T,s);if(inT(q))m=Math.min(m,q[1]-top-rF*(1-.34*s))}return m};
+  let res=T===sol.T?sol:ik(S,T,a.a,a.b,a.pole),lift=0;for(let k=0;k<6;k++){const m=clr(res.E,res.T);if(m>=0)break;lift+=Math.min(.03,-m+.003);res=ik(S,[T[0],T[1]+lift,T[2]],a.a,a.b,a.pole)}
+  a.lf=(a.lf||0)+(Math.min(lift,.1)-(a.lf||0))*(1-Math.exp(-12*(dt||.016)));return a.lf>.001?ik(S,[T[0],T[1]+a.lf,T[2]],a.a,a.b,a.pole):(T===sol.T?sol:ik(S,T,a.a,a.b,a.pole))}
 function fpLocal(r){const v=CAM.view,c=toLocal(r,CAM.pos),dl=w=>V3.sub(toLocal(r,V3.add(CAM.pos,w)),c);return{C:c,F:dl([-v[2],-v[6],-v[10]]),R:dl([v[0],v[4],v[8]]),U:dl([v[1],v[5],v[9]])}}
 function placeT(r){const s=rigSide(r)==='L'?1:-1;return M4.tp(r.root.w,[s*.07,TABLE_Y+.05,.63])}
 /* ---------- balle dans la tête ---------- */
@@ -1496,7 +1490,7 @@ function rigUpdate(r,dt,t){
   r.hurt=Math.max(0,r.hurt-dt*1.3);
   r.cheerA+=((tn<r.cheerUntil?1:0)-r.cheerA)*k(6);r.fearA+=((tn<r.fearUntil?1:0)-r.fearA)*k(5);
   const reaching=r.reachT||r.hover;
-  {const tp=!r.fp;r.body.vis=r.chairN.vis=tp;if(r.fanN)r.fanN.vis=tp;for(const sd of['L','R']){const a=r.arms[sd];const vis=p.alive||tp;a.up.vis=a.shj.vis=tp;a.el.vis=a.fo.vis=vis;if(a.cuff)a.cuff.vis=vis;a.hand.vis=vis&&a.alive;a.stump.vis=vis&&!a.alive}}
+  {const tp=!r.fp;r.body.vis=r.chairN.vis=tp;if(r.fanN)r.fanN.vis=tp;for(const sd of['L','R']){const a=r.arms[sd];const vis=p.alive||tp;a.up.vis=vis;a.shj.vis=tp;a.el.vis=a.fo.vis=vis;if(a.cuff)a.cuff.vis=vis;a.hand.vis=vis&&a.alive;a.stump.vis=vis&&!a.alive}}
   // lean
   let reachLean=0;if(reaching&&!r.isH){const T=toLocal(r,typeof reaching==='function'?reaching():reaching);const dz=T[2]-.0;reachLean=clamp((Math.hypot(T[0],T[2]+.06)-.42)*1.2,0,.62)}
   const leanT=(r.isH||r.stand?0:.06)+reachLean+(tn<r.peekUntil?.3:0)-r.fearA*.14-r.hurt*.35-r.cheerA*.08+r.deadA*(r.deadMode==='side'?.42:r.deadMode==='table'?(r.L.deadLean||.98):1.05);
@@ -1552,12 +1546,12 @@ function rigUpdate(r,dt,t){
     else if(r.hurt>.2&&!a.alive)T=[a.s*.06,r.isH?.95:1.0,r.isH?.3:.16];
     else if(r.fearA>.5)T=[a.s*.24,.84,r.isH?.32:.3];
     else if(!r.isH&&tn<r.talkUntil&&sd==='R'&&a.alive)T=[a.s*.25,.94+Math.sin(t*9)*.04,.42];
-    else T=[a.rest[0]+Math.sin(t*1.3+a.s+r.t0)*.01,(r.isH?.8:TABLE_Y+.035)+Math.max(0,Math.sin(t*3+a.s*2+r.t0))*.01,a.rest[2]];
+    else T=r.isH?[a.rest[0]+Math.sin(t*1.3+a.s+r.t0)*.01,.8+Math.max(0,Math.sin(t*3+a.s*2+r.t0))*.01,a.rest[2]]:[a.rest[0]*1.02+Math.sin(t*1.3+a.s+r.t0)*.01,TABLE_Y+.05+Math.max(0,Math.sin(t*3+a.s*2+r.t0))*.008,.58];
     if(G.sus&&G.susWho===r.i&&r.reachT&&r.reachSide===sd)T=[T[0]+(rand()-.5)*.014,T[1]+(rand()-.5)*.014,T[2]];
     a.cur=V3.lerp(a.cur,T,k(kk));
     let sol=ik(S,a.cur,a.a,a.b,fpB&&(aimD||fk)?[a.s*.9,-.7,-.1]:a.pole);if(!r.stand&&!G.lobby3d&&!r.isH)sol=armClear(r,S,sol,a,dt);
-    setLimb(a.up,S,sol.E,a.kU);setLimb(a.fo,sol.E,sol.T,a.kF);a.el.p=sol.E;a.el.s=[a.kE,a.kE,a.kE];a.shj.p=S;a.shj.s=[a.kS,a.kS,a.kS];
-    let f=V3.norm(V3.sub(sol.T,sol.E));if(r.isH&&!fk)f=V3.norm(V3.add(f,[0,0,1.2]));if(fk)f=[0,1,0];else if(aimD)f=aimD;else if(sol.T[1]<S[1]-.1)f=V3.norm([f[0],f[1]*.35,f[2]]);
+    setLimb(a.up,r.fp?V3.add(S,[a.s*.03,-.3,-.12]):S,sol.E,a.kU);setLimb(a.fo,sol.E,sol.T,a.kF);a.el.p=sol.E;a.el.s=[a.kE,a.kE,a.kE];a.shj.p=S;a.shj.s=[a.kS,a.kS,a.kS];
+    let f=V3.norm(V3.sub(sol.T,sol.E));if(r.isH&&!fk)f=V3.norm(V3.add(f,[0,0,1.2]));if(fk)f=[0,1,0];else if(aimD)f=aimD;else if(sol.T[1]<S[1]-.1){const hl=Math.hypot(f[0],f[2])||1,ov=!r.stand&&!G.lobby3d&&sol.T[1]<TABLE_Y+.16,fy=ov?clamp((TABLE_Y+.012-sol.T[1])/.12,-.55,0):f[1]*.35/Math.max(.3,hl);f=V3.norm([f[0]/hl,fy,f[2]/hl])}
     let q;if(fk){const hb=fkD?V3.norm([fkD[0],0,fkD[2]]):[0,0,1],fu=V3.norm(V3.add([0,1,0],V3.mul(hb,.25))),hx=V3.norm(V3.cross(hb,fu));q=Q.basis(hx,V3.cross(fu,hx),fu)}else{const ref=Math.abs(f[1])>.85?[0,0,1]:[0,1,0];const rx=V3.norm(V3.cross(ref,f)),uy=V3.cross(f,rx);q=Q.basis(rx,uy,f)}
     let hq=q;if(r.gripGun===sd&&GUN&&GUN.vis&&r.reachT){const gq=Q.mul(Q.axis([0,1,0],-r.ang),GUN.q),GX=Q.rot(gq,[1,0,0]),GZ=Q.rot(gq,[0,0,1]),hy=V3.mul(GX,a.s),hz=GZ,hx=V3.cross(hy,hz);hq=Q.basis(hx,hy,hz)}
     if(a.cuff){const fd=V3.norm(V3.sub(sol.T,sol.E));setLimb(a.cuff,V3.sub(sol.T,V3.mul(fd,.062)),V3.sub(sol.T,V3.mul(fd,.014)),a.rw*1.24)}
