@@ -390,7 +390,7 @@ header{gap:clamp(3px,1.4vw,7px)}
 <script>
 (()=>{
 'use strict';
-const BUILD=202611171347;
+const BUILD=202611171352;
 const $=s=>document.querySelector(s);
 const rand=Math.random;
 const ri=(a,b)=>a+Math.floor(rand()*(b-a+1));
@@ -2099,7 +2099,7 @@ function guestMsg(m){if(!m||typeof m!=='object')return;
   if(m.t==='ver'){const cd=NET.code;NET.close();showJoin(cd,'Version différente de celle de l’hôte&nbsp;: rechargez la page tous les deux.');return}
   if(m.t==='lobby'){NET.lobby=m.names.map((n,k)=>({name:n,me:k===m.you,animal:(x=>Number.isInteger(x)&&x>=0&&x<ANIMALS.length?x:4)((m.animals||[])[k]),ready:!!(m.ready||[])[k]}));G.bots=m.bots;G.freeCall=!!m.fc;if(Array.isArray(m.pool)&&m.pool.length===ANIMALS.length)NET.botPool=m.pool.map(x=>+x|0);NET.vids=m.vids||{};voiceCallAll();if(G.online!=='guest')drawLobby();return}
   if(m.t==='start'){NET.q=[];NET.qw=null;NET.spd=+(m.cfg&&m.cfg.spd)||1;G.online='guest';$('#lobby').classList.remove('show');$('#title').classList.remove('show');$('#end').classList.remove('show');startGame(m.cfg);return}
-  if(m.t==='fx'){applyFx(m);return}
+  if(m.t==='fx'){if(m.who!==G.me)applyFx(m);return}
   if(m.t==='pwno'){G.pwWait=false;toast('Pouvoir impossible maintenant',1600);render();return}
   if(m.t==='pw'){if(m.who===G.me&&pending&&pending.kind==='liar'&&!NET.q.length){powFx(m,false);return}NET.q.push(m);if(NET.qw){const w=NET.qw;NET.qw=null;w()}return}
   if(m.t==='spd'){NET.spd=clamp(+m.v||1,.5,4);G.speed=NET.spd;return}
