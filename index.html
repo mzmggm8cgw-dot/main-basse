@@ -315,6 +315,10 @@ body.inlobby #actBar{display:none!important}
 #pwBtn{left:max(8px,env(safe-area-inset-left))!important;bottom:max(8px,env(safe-area-inset-bottom))!important}
 @media (orientation:landscape) and (max-height:560px){#hint{left:max(176px,calc(env(safe-area-inset-left) + 168px))!important;max-width:calc(100% - 360px)}header{top:max(6px,env(safe-area-inset-top))!important;bottom:auto!important}}
 @media (max-width:380px){#actBar{gap:5px}#actBar .icbtn{min-width:46px;height:46px;font-size:21px}}
+/* viewport robuste (barre d'adresse mobile) */
+html{height:100%;overflow:hidden}
+body{position:fixed;inset:0;width:100%;min-height:0;height:100vh;height:100dvh;overflow:hidden}
+@media (max-height:600px){#hint{padding:4px 10px!important;font-size:12px!important;line-height:1.25}#hint *{font-size:inherit}#hint h3,#hint .t,#hint b:first-child{font-size:14px}}
 </style>
 </head>
 <body>
@@ -369,7 +373,7 @@ body.inlobby #actBar{display:none!important}
     <div class="apick" id="tPick"></div>
     <div class="tpow" id="tPow"></div>
     <div id="names"></div>
-    <div class="opts"><button class="btn" id="nbBtn" hidden>🤖 Robots en plus&nbsp;: 0</button><button class="btn" id="fsTitle">⛶ Plein écran</button><button class="btn" id="fcBtn">⚡ Menteur libre&nbsp;: non</button></div>
+    <div class="opts"><button class="btn" id="nbBtn" hidden>🤖 Robots en plus&nbsp;: 0</button><button class="btn" id="fsTitle">⛶ Plein écran</button></div>
     <button class="btn big" id="startBtn">S’asseoir à la table</button>
     <div class="modes" style="margin-top:10px"><button class="btn" id="onCreate">🌐 Créer une partie en ligne<small>tu reçois un code à donner</small></button><button class="btn" id="onJoin">🔑 Rejoindre une partie<small>avec le code d’un ami</small></button></div>
     <div class="t-foot" id="record">Son conseillé · se joue au doigt</div>
@@ -402,7 +406,7 @@ body.inlobby #actBar{display:none!important}
 <script>
 (()=>{
 'use strict';
-const BUILD=202611172116;
+const BUILD=202611172129;
 const $=s=>document.querySelector(s);
 const rand=Math.random;
 const ri=(a,b)=>a+Math.floor(rand()*(b-a+1));
@@ -420,7 +424,7 @@ const PI=Math.PI,TAU=PI*2;
 
 /* ================= STATE ================= */
 const G={players:[],round:0,device:null,actor:-1,focus:-1,extra:{},speed:1,baseSpeed:1,out:[],spectate:false,cardLocked:false,ui:'',logs:[],
-  autoplay:false,acting:false,selCard:-1,lastType:null,bag:[],paused:false,forceType:null,names:[],online:null,me:0,myAnimal:4,animals:[4,0,1,2,3],lobby3d:false,lob:{},perm:[0,1,2,3],humans:1,view:0,game:'liar',bots:0,endless:false,freeCall:false,ocWho:null,turnTok:0,score:{},lsel:[],lcan:{},llast:null,rule:'gun',noRender:false};
+  autoplay:false,acting:false,selCard:-1,lastType:null,bag:[],paused:false,forceType:null,names:[],online:null,me:0,myAnimal:4,animals:[4,0,1,2,3],lobby3d:false,lob:{},perm:[0,1,2,3],humans:1,view:0,game:'liar',bots:0,endless:false,freeCall:true,ocWho:null,turnTok:0,score:{},lsel:[],lcan:{},llast:null,rule:'gun',noRender:false};
 let TOKEN=0;const ABORT=new Error('abort');ABORT.abort=true;
 function sleep(ms){const t=TOKEN;return new Promise((res,rej)=>{const go=()=>{if(TOKEN!==t)return rej(ABORT);if(G.paused)return setTimeout(go,150);res()};setTimeout(go,ms/G.speed)})}
 function prog(t0,dur){return clamp((now()-t0)*G.speed/dur,0,1)}
@@ -1899,7 +1903,7 @@ async function runGame(){try{if(G.game==='liar'){await (G.online==='guest'?runGu
 function resetWorld(){for(const r of RIGS)if(r)SCENE.remove(r.root);RIGS=[];for(const p of PARTS)SCENE.remove(p.n);PARTS.length=0;if(G.device){SCENE.remove(G.device.g);G.device=null}
   genTableCanvas(TEX.table.cv);tableDirty=true}
 function startGame(cfg){TOKEN++;NET.wait={};if(pending){const p=pending;pending=null;try{p.rej(ABORT)}catch(e){}}stopHeart();
-  wakeOn();lookReset();CAM.ly=CAM.lp=0;G.lobby3d=false;document.body.classList.remove('inlobby');let ps;G.ocWho=null;OC.open=false;OC.res=null;clearTurnTimer();if(cfg){G.perm=cfg.perm;G.freeCall=!!cfg.freeCall;G.animals=cfg.animals||[4,0,1,2,3];G.rule='gun';ps=cfg.players.map((c,i)=>{const P=PERSONAS[G.animals[i]];if(i===0)return{i:0,name:c.name,isHuman:true,remote:!!c.remote,persona:Object.assign({},P,{lines:{}}),color:P.color};return{i,name:c.isHuman?c.name:P.name,isHuman:!!c.isHuman,remote:!!c.remote,absent:!!c.absent,persona:c.isHuman?Object.assign({},P,{lines:{}}):P,color:P.color}})}else{
+  wakeOn();lookReset();CAM.ly=CAM.lp=0;G.lobby3d=false;document.body.classList.remove('inlobby');let ps;G.ocWho=null;OC.open=false;OC.res=null;clearTurnTimer();if(cfg){G.perm=cfg.perm;G.freeCall=true;G.animals=cfg.animals||[4,0,1,2,3];G.rule='gun';ps=cfg.players.map((c,i)=>{const P=PERSONAS[G.animals[i]];if(i===0)return{i:0,name:c.name,isHuman:true,remote:!!c.remote,persona:Object.assign({},P,{lines:{}}),color:P.color};return{i,name:c.isHuman?c.name:P.name,isHuman:!!c.isHuman,remote:!!c.remote,absent:!!c.absent,persona:c.isHuman?Object.assign({},P,{lines:{}}):P,color:P.color}})}else{
   const mh=G.humans>1,tot=mh?Math.min(5,G.humans+(G.bots||0)):5,st={2:[0,3],3:[0,1,4],4:[0,1,3,4],5:[0,1,2,3,4]}[tot],hs=[0,...shuffle(st.slice(1)).slice(0,G.humans-1)],hn={};shuffle(hs.map((_,k)=>k+1)).forEach((n,k)=>hn[hs[k]]=n);G.perm=shuffle([0,1,2,3]);G.rule=G.game==='liar'?'gun':(G.ruleSel||G.rule);G.animals=(DBG&&window.__animals)||[G.myAnimal,...shuffle(AN_ALL.filter(a=>a!==G.myAnimal))].slice(0,5);const P0=PERSONAS[G.animals[0]];ps=[{i:0,name:mh?nmOf(hn[0]):'Toi',isHuman:true,persona:Object.assign({},P0,{lines:{}}),color:P0.color}];[0,1,2,3].forEach(k=>{const P=PERSONAS[G.animals[k+1]],h=hs.includes(k+1);ps.push({i:k+1,name:h?nmOf(hn[k+1]):P.name,isHuman:h,absent:!st.includes(k+1),persona:h?Object.assign({},P,{lines:{}}):P,color:P.color})})}
   ps.forEach(p=>Object.assign(p,{hands:2,bullet:ri(0,5),shots:0,cards:[],hand:[],alive:!p.absent,grudge:[0,0,0,0,0],claims:0,lies:0}));
   $('#stage').classList.remove('sus');G.sus=0;Object.assign(G,{players:ps,lsel:[],lcan:{},llast:null,view:cfg?cfg.me:0,me:cfg?cfg.me:0,round:0,actor:-1,focus:-1,extra:{},out:[],spectate:false,cardLocked:false,ui:'',logs:[],acting:false,selCard:-1,lastType:null,bag:[],paused:false});G.speed=G.baseSpeed;
@@ -1907,8 +1911,9 @@ function startGame(cfg){TOKEN++;NET.wait={};if(pending){const p=pending;pending=
   buildTags();if(G.game!=='liar')G.players.forEach(p=>{if(p.alive){giveCard(p.i);giveCard(p.i)}});$('#log').innerHTML='';$('#end').classList.remove('show');$('#intro').classList.remove('show');render();runGame()}
 
 /* ================= LOOP ================= */
-function resizeStage(){const st=$('#stage');const w=st.clientWidth||360;const hd=document.querySelector('header');const land=window.innerWidth>window.innerHeight&&window.innerHeight<=560;const h=window.innerHeight;st.style.height=h+'px';
+function resizeStage(){const st=$('#stage');const w=st.clientWidth||360;const hd=document.querySelector('header');const land=window.innerWidth>window.innerHeight&&window.innerHeight<=560;const vv=window.visualViewport,h=Math.round(Math.min(window.innerHeight,vv&&vv.height?vv.height:1e5));st.style.height=h+'px';document.documentElement.style.setProperty('--vh',h+'px');
   const d=Math.max(.75,Math.min(2,window.devicePixelRatio||1,Math.sqrt(2.4e6/Math.max(1,w*h))));glc.width=Math.round(w*d);glc.height=Math.round(h*d);CAM.w=w;CAM.h=h}
+if(window.visualViewport){const vf=()=>{resizeStage();if(window.scrollY||window.scrollX)window.scrollTo(0,0)};visualViewport.addEventListener('resize',vf);visualViewport.addEventListener('scroll',vf)}window.addEventListener('orientationchange',()=>setTimeout(resizeStage,250));window.addEventListener('scroll',()=>{if(window.scrollY)window.scrollTo(0,0)},{passive:true});
 window.addEventListener('resize',()=>{resizeStage();clearTimeout(resizeStage.h);resizeStage.h=setTimeout(()=>{const ae=document.activeElement;if(ae&&ae.tagName==='INPUT')return;if(G.lobby3d&&NET.role&&$('#lobby').classList.contains('show')&&!$('#lobby').classList.contains('solid'))drawLobby()},200)});
 function updCam(t,dt){const asp=CAM.w/CAM.h;{const lb=!!G.lobby3d;if(TBLN.lb!==lb){TBLN.lb=lb;for(const n of TBLN)n.vis=!lb;if(LOBG)LOBG.vis=lb}}
   if(G.lobby3d){const fv=clamp(2*Math.atan(Math.tan(31*PI/180)/asp),50*PI/180,100*PI/180);const pt=CAM.h>CAM.w,pos=[Math.sin(t*.22)*.1,pt?1.25:1.18,pt?.9:.35],tg=[0,pt?.62:.84,3.4];CAM.pos=pos;CAM.view=M4.lookAt(pos,tg,[0,1,0]);CAM.proj=M4.persp(clamp(2*Math.atan(Math.tan(27*PI/180)/asp),52*PI/180,96*PI/180),asp,.08,30);M4.mul(CAM.proj,CAM.view,CAM.vp);CAM.sus=0;for(const r of RIGS)if(r){r.fp=false;r.tp=true}return}const fov=clamp(2*Math.atan(Math.tan(29*PI/180)/asp),52*PI/180,94*PI/180);
@@ -2006,7 +2011,7 @@ $('#names').addEventListener('input',e=>{const k=+e.target.dataset.k;G.names[k]=
 const nbUpd=()=>{namesUI();G.bots=Math.min(G.bots,5-G.humans);$('#nbBtn').innerHTML='🤖 Robots en plus&nbsp;: '+G.bots};
 $('#nbBtn').addEventListener('click',()=>{G.bots=(G.bots+1)%(5-G.humans+1);nbUpd()});
 if($('#infBtn'))$('#infBtn').addEventListener('click',()=>{G.endless=!G.endless;$('#infBtn').innerHTML='♾️ Infini&nbsp;: '+(G.endless?'oui':'non')});
-$('#fcBtn').addEventListener('click',()=>{G.freeCall=!G.freeCall;$('#fcBtn').innerHTML='⚡ Menteur libre&nbsp;: '+(G.freeCall?'oui':'non');toast(G.freeCall?'Menteur libre : tout le monde peut crier «&nbsp;Menteur&nbsp;» à tout moment. Le premier qui crie gagne la main.':'Menteur libre désactivé',2600)});
+if($('#fcBtn'))$('#fcBtn').addEventListener('click',()=>{G.freeCall=!G.freeCall;$('#fcBtn').innerHTML='⚡ Menteur libre&nbsp;: '+(G.freeCall?'oui':'non');toast(G.freeCall?'Menteur libre : tout le monde peut crier «&nbsp;Menteur&nbsp;» à tout moment. Le premier qui crie gagne la main.':'Menteur libre désactivé',2600)});
 $('#startBtn').addEventListener('click',()=>{G.score={};SND.init();$('#title').classList.remove('show');startGame()});
 $('#end').addEventListener('click',e=>{if(e.target.id==='watchBtn'){$('#end').classList.remove('show');giveInput('defeat','watch')}else if(e.target.id==='menuBtn'){wakeOff();NET.close();TOKEN++;OC.open=false;OC.res=null;G.ocWho=null;clearTurnTimer();$('#ocBtn').classList.remove('show');if(pending){const p=pending;pending=null;try{p.rej(ABORT)}catch(_){}}$('#end').classList.remove('show');$('#title').classList.add('show');setTimeout(applyUpdate,400)}else if(e.target.id==='againBtn'){SND.init();$('#end').classList.remove('show');restart()}});
 $('#sndBtn').addEventListener('click',()=>{SND.init();SND.setOn(!SND.on);$('#sndBtn').textContent=SND.on?'🔊':'🔇'});
@@ -2082,7 +2087,7 @@ function lobbyHTML(){const L=NET.lobby,hst=NET.role==='host',tot=L.length+G.bots
    <div class="hub-sel"><small class="pwl">✦ ${POW[mine].n}&nbsp;: ${POW[mine].s}</small><div><button class="hs" data-sel="-1">‹</button><b>${ANIMALS[mine].e} ${ANIMALS[mine].n}</b><button class="hs" data-sel="1">›</button></div></div>
    <div class="hub-bot">
     <div class="lobrow">Pseudo&nbsp;: <input id="lobName" class="nm-in" maxlength="12" autocomplete="off" style="flex:0 1 160px" value="${myName().replace(/["<>&]/g,'')}"></div>
-    ${hst?`<div class="lobrow"><button class="btn" data-lb="-">−</button>Robots&nbsp;: ${G.bots}<button class="btn" data-lb="+">+</button><button class="btn" id="lobFc">⚡ Menteur libre&nbsp;: ${G.freeCall?'oui':'non'}</button></div>`:`<div class="lobrow" style="opacity:.75">⏳ L’hôte lancera la partie${G.freeCall?' · ⚡ Menteur libre':''}</div>`}
+    ${hst?`<div class="lobrow"><button class="btn" data-lb="-">−</button>Robots&nbsp;: ${G.bots}<button class="btn" data-lb="+">+</button></div>`:`<div class="lobrow" style="opacity:.75">⏳ L’hôte lancera la partie${G.freeCall?' · ⚡ Menteur libre':''}</div>`}
     <div class="lobrow">${BC?'':`<button class="btn" id="lobMic">${micLabel()}</button>`}<button class="btn" id="lobInv">👥 Inviter</button></div>
    </div></div>`}
 function inviteFriends(){const url=location.origin+location.pathname+'?j='+NET.code,txt=`Rejoins ma partie de Main Basse ! Ouvre le lien, ou touche « Rejoindre une partie » et tape le code ${NET.code}`;
@@ -2137,8 +2142,8 @@ function hostLaunch(){if(NET.role!=='host')return;const humans=NET.lobby.slice()
   NET.seatOf={};const animals=[humans[0].animal,null,null,null,null];humans.slice(1).forEach((h,k)=>{const seat=gs[k];players[seat]={name:h.name,isHuman:true,remote:true};NET.seatOf[h.conn.id]=seat;animals[seat]=h.animal});
   {const used=new Set(humans.map(h=>h.animal)),free=botPool().filter(a=>!used.has(a));for(let i=1;i<5;i++)if(animals[i]==null&&!players[i].absent)animals[i]=free.shift();for(let i=1;i<5;i++)if(animals[i]==null)animals[i]=free.shift()}
   G.online='host';$('#lobby').classList.remove('show');$('#title').classList.remove('show');$('#end').classList.remove('show');
-  for(const h of humans.slice(1))h.conn.send({t:'start',cfg:{perm,players,animals,freeCall:!!G.freeCall,spd:G.baseSpeed,me:NET.seatOf[h.conn.id]}});
-  startGame({perm,players,animals,freeCall:!!G.freeCall,me:0})}
+  for(const h of humans.slice(1))h.conn.send({t:'start',cfg:{perm,players,animals,freeCall:true,spd:G.baseSpeed,me:NET.seatOf[h.conn.id]}});
+  startGame({perm,players,animals,freeCall:true,me:0})}
 function restart(){if(G.online==='host')hostLaunch();else if(!G.online)startGame()}
 async function joinOnline(code){code=(code||'').toUpperCase().replace(/[^A-Z]/g,'');if(code.length!==4){$('.lerr').textContent='Le code fait 4 lettres.';return}
   SND.init();NET.close();NET.closing=false;lobbyMsg('<div class="e-t">Connexion…</div><div class="e-s">Recherche de la partie '+code+'.</div>');
@@ -2148,7 +2153,7 @@ async function joinOnline(code){code=(code||'').toUpperCase().replace(/[^A-Z]/g,
 function guestMsg(m){if(!m||typeof m!=='object')return;
   if(m.t==='full'){const cd=NET.code;NET.close();showJoin(cd,'La partie est pleine ou déjà commencée.');return}
   if(m.t==='ver'){const cd=NET.code;NET.close();showJoin(cd,'Version différente de celle de l’hôte&nbsp;: rechargez la page tous les deux.');return}
-  if(m.t==='lobby'){NET.lobby=m.names.map((n,k)=>({name:n,me:k===m.you,animal:(x=>Number.isInteger(x)&&x>=0&&x<ANIMALS.length?x:4)((m.animals||[])[k]),ready:!!(m.ready||[])[k]}));G.bots=m.bots;G.freeCall=!!m.fc;if(Array.isArray(m.pool)&&m.pool.length===ANIMALS.length)NET.botPool=m.pool.map(x=>+x|0);NET.vids=m.vids||{};voiceCallAll();if(G.online!=='guest')drawLobby();return}
+  if(m.t==='lobby'){NET.lobby=m.names.map((n,k)=>({name:n,me:k===m.you,animal:(x=>Number.isInteger(x)&&x>=0&&x<ANIMALS.length?x:4)((m.animals||[])[k]),ready:!!(m.ready||[])[k]}));G.bots=m.bots;G.freeCall=true;if(Array.isArray(m.pool)&&m.pool.length===ANIMALS.length)NET.botPool=m.pool.map(x=>+x|0);NET.vids=m.vids||{};voiceCallAll();if(G.online!=='guest')drawLobby();return}
   if(m.t==='start'){NET.q=[];NET.qw=null;NET.spd=+(m.cfg&&m.cfg.spd)||1;G.online='guest';$('#lobby').classList.remove('show');$('#title').classList.remove('show');$('#end').classList.remove('show');startGame(m.cfg);return}
   if(m.t==='fx'){if(m.who!==G.me)applyFx(m);return}
   if(m.t==='pwno'){G.pwWait=false;toast('Pouvoir impossible maintenant',1600);render();return}
