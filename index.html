@@ -375,6 +375,7 @@ body{position:fixed;inset:0;width:100%;min-height:0;height:100vh;height:100dvh;o
     <div id="names"></div>
     <div class="opts"><button class="btn" id="nbBtn" hidden>🤖 Robots en plus&nbsp;: 0</button><button class="btn" id="fsTitle">⛶ Plein écran</button></div>
     <button class="btn big" id="startBtn">S’asseoir à la table</button>
+    <a class="btn" href="verre/" style="display:block;margin-top:10px;text-align:center;text-decoration:none">🔪 Nouveau : Dernier verre</a>
     <div class="modes" style="margin-top:10px"><button class="btn" id="onCreate">🌐 Créer une partie en ligne<small>tu reçois un code à donner</small></button><button class="btn" id="onJoin">🔑 Rejoindre une partie<small>avec le code d’un ami</small></button></div>
     <div class="t-foot" id="record">Son conseillé · se joue au doigt</div>
     <div class="t-foot" id="ver" style="opacity:.55;font-size:10px;margin-top:4px"></div>
@@ -406,7 +407,7 @@ body{position:fixed;inset:0;width:100%;min-height:0;height:100vh;height:100dvh;o
 <script>
 (()=>{
 'use strict';
-const BUILD=202611172129;
+const BUILD=202611172219;
 const $=s=>document.querySelector(s);
 const rand=Math.random;
 const ri=(a,b)=>a+Math.floor(rand()*(b-a+1));
