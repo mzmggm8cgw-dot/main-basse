@@ -210,6 +210,9 @@ body{overflow:hidden}
 header{position:absolute;z-index:20;top:max(8px,env(safe-area-inset-top));right:max(8px,env(safe-area-inset-right));left:max(8px,env(safe-area-inset-left));margin:0;justify-content:flex-end}
 .logo,#roundLbl{display:none}
 .icbtn{background:rgba(8,5,4,.62);min-width:42px;height:42px;font-size:18px;border-radius:11px}
+#pwBtn{position:absolute;z-index:21;left:170px;bottom:max(8px,env(safe-area-inset-bottom));min-height:44px;padding:4px 12px 4px 8px;border-radius:13px;border:1px solid rgba(185,140,255,.5);background:rgba(18,9,26,.8);color:#eadfff;font:600 13px/1.1 Georgia,serif;display:flex;align-items:center;gap:7px;cursor:pointer;text-align:left;-webkit-tap-highlight-color:transparent}#pwBtn[hidden]{display:none}#pwBtn .pe{font-size:22px}#pwBtn small{display:block;font:400 10px/1.2 Georgia,serif;letter-spacing:1.5px;text-transform:uppercase;opacity:.7}#pwBtn.dim{opacity:.5}#pwBtn.ok{border-color:#c9a2ff;animation:pwp 1.6s ease-in-out infinite}@keyframes pwp{0%,100%{box-shadow:0 0 10px rgba(170,110,255,.55),inset 0 0 8px rgba(170,110,255,.3)}50%{box-shadow:0 0 22px rgba(190,130,255,.95),inset 0 0 14px rgba(170,110,255,.5)}}
+#pwPop{position:absolute;z-index:31;left:10px;bottom:calc(max(8px,env(safe-area-inset-bottom)) + 56px);width:min(330px,calc(100% - 20px));padding:12px 14px;border-radius:14px;background:rgba(14,8,22,.95);border:1px solid rgba(185,140,255,.6);color:#efe6ff;font-size:14px;line-height:1.38;box-shadow:0 8px 30px rgba(0,0,0,.6)}#pwPop[hidden]{display:none}#pwPop .pt{font-weight:700;font-size:16px;margin-bottom:4px}#pwPop .pw{color:#d9b8ff;margin-top:6px;font-size:12.5px;opacity:.85}#pwPop .pb{display:flex;gap:8px;margin-top:10px}#pwPop .pb .btn{flex:1;margin:0}
+.tpow{font-size:13px;line-height:1.35;margin:6px 2px 4px;padding:8px 10px;border-radius:10px;background:rgba(40,20,60,.35);border:1px solid rgba(185,140,255,.3);color:#e6d8ff;text-align:left}.hub-sel small.pwl{display:inline-block;white-space:normal;text-transform:none;letter-spacing:.3px;font-size:12.5px;max-width:86vw;margin:0 auto 6px;padding:4px 11px;border-radius:10px;background:rgba(14,8,22,.8);border:1px solid rgba(185,140,255,.35);color:#e2d0ff;opacity:1}.tag .pwi{opacity:.9;font-size:11px}
 #cgBtn{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:manipulation}#cgBtn.on{border-color:#ff9a3c;box-shadow:0 0 10px rgba(255,140,50,.55) inset,0 0 8px rgba(255,140,50,.35)}
 @media (max-width:430px){.hdr-r{gap:4px}.icbtn{min-width:36px;height:40px;font-size:17px;padding:0 3px}}@media (max-width:370px){.icbtn{min-width:33px}}
 #hint{position:absolute;z-index:19;top:calc(max(8px,env(safe-area-inset-top)) + 50px);left:10px;right:10px;min-height:0;text-align:center;font-size:15px;line-height:1.3;padding:7px 10px;border-radius:12px;background:rgba(8,5,4,.74);border:1px solid rgba(255,166,77,.5)}
@@ -340,6 +343,7 @@ header{gap:clamp(3px,1.4vw,7px)}
     <div id="cards"></div>
     <div id="log"></div>
   </section>
+  <button id="pwBtn" hidden></button><div id="pwPop" hidden></div>
 </div>
 <div id="flash"></div>
 
@@ -351,6 +355,7 @@ header{gap:clamp(3px,1.4vw,7px)}
     <div class="modes"><button class="btn mode on" data-h="1">🤖 Robots<small>toi contre 4 robots</small></button><button class="btn mode" data-h="2">🧑‍🤝‍🧑 Collaborateurs<small>à plusieurs, on se passe l’écran</small></button></div>
     <div id="hc" hidden>Joueurs humains&nbsp;:<button class="btn on" data-n="2">2</button><button class="btn" data-n="3">3</button><button class="btn" data-n="4">4</button><button class="btn" data-n="5">5</button></div>
     <div class="apick" id="tPick"></div>
+    <div class="tpow" id="tPow"></div>
     <div id="names"></div>
     <div class="opts"><button class="btn" id="nbBtn" hidden>🤖 Robots en plus&nbsp;: 0</button><button class="btn" id="fsTitle">⛶ Plein écran</button><button class="btn" id="infBtn">♾️ Infini&nbsp;: non</button><button class="btn" id="fcBtn">⚡ Menteur libre&nbsp;: non</button></div>
     <button class="btn big" id="startBtn">S’asseoir à la table</button>
@@ -385,7 +390,7 @@ header{gap:clamp(3px,1.4vw,7px)}
 <script>
 (()=>{
 'use strict';
-const BUILD=202611170853;
+const BUILD=202611171037;
 const $=s=>document.querySelector(s);
 const rand=Math.random;
 const ri=(a,b)=>a+Math.floor(rand()*(b-a+1));
@@ -451,7 +456,7 @@ const V=(i,il,tu)=>YOU(i)?tu:il;
 const B=s=>`<b>${s}</b>`;
 const HAND_SVG='<svg viewBox="0 0 24 28"><g fill="currentColor"><rect x="5" y="11" width="14" height="15" rx="5"/><rect x="5" y="4" width="3.2" height="12" rx="1.6"/><rect x="8.9" y="1.5" width="3.2" height="13" rx="1.6"/><rect x="12.8" y="2.5" width="3.2" height="12" rx="1.6"/><rect x="16.4" y="5.5" width="3" height="10" rx="1.5"/><rect x="2" y="12.5" width="3.2" height="9" rx="1.6" transform="rotate(-35 3.6 17)"/></g></svg>';
 const STUMP_SVG='<svg viewBox="0 0 24 28"><rect x="6" y="14" width="12" height="12" rx="3" fill="#cfc4ad"/><path d="M6 18.5h12M6 22.5h12" stroke="#9a8e78" stroke-width="1"/><ellipse cx="12" cy="14.6" rx="6" ry="2.6" fill="#b9ad95"/><circle cx="13" cy="14.8" r="2.2" fill="#9a1014"/></svg>';
-function lifeHTML(p){return G.rule==='gun'?`<span class="pips">${'<i></i>'.repeat(6-p.shots)}${'<i class="u"></i>'.repeat(p.shots)}</span>`:handsHTML(p.hands)}
+function lifeHTML(p){const f=Math.min(6,fired(p));return G.rule==='gun'?`<span class="pips">${'<i></i>'.repeat(6-f)}${'<i class="u"></i>'.repeat(f)}</span>`:handsHTML(p.hands)}
 function handsHTML(n){let s='';for(let k=0;k<2;k++)s+=k<n?HAND_SVG:STUMP_SVG;return s}
 function avatarSVG(mask,color,cls){
   const eye=(x,y,r)=>`<circle cx="${x}" cy="${y}" r="${(r||2.6)+1.5}" fill="#f2ece0"/><circle cx="${x}" cy="${y}" r="${(r||2.6)*.66}" fill="#120a07"/>`;
@@ -1146,7 +1151,7 @@ function fxUpd(t,dt){const tn=now();STORM.tt+=dt;
   if(STORM.jolt>0){STORM.jolt=Math.max(0,STORM.jolt-dt*2.6);const j=STORM.jolt;for(const c of CANDLES)c.n.p[1]=TABLE_Y+Math.abs(Math.sin(j*17+c.seed))*j*.035}
   if(LAMPB&&!G.lobby3d){const lp=wp(LAMPB);for(const m of STORM.moth){m.a+=dt*m.v*(1+.6*Math.sin(t*1.7+m.b));m.b+=dt*3.1;const r=m.r*(1+.35*Math.sin(m.b*.7));m.n.vis=true;m.n.p=[lp[0]+Math.cos(m.a)*r,lp[1]-.04+Math.sin(m.b)*.07,lp[2]+Math.sin(m.a)*r]}}else for(const m of STORM.moth)m.n.vis=false;
   if(STORM.neon){const k=Math.sin(t*.9)>.93&&Math.sin(t*47)>0?.25:1;const e=STORM.neon.e,b=STORM.neonB;e[0]=b[0]*k;e[1]=b[1]*k;e[2]=b[2]*k}
-  dealUpd();cigUpd(t,dt);deathUpd(t,dt);bloomWatch(dt)}
+  dealUpd();cigUpd(t,dt);deathUpd(t,dt);bloomWatch(dt);powBurstUpd()}
 function tableSlam(i){const r=RIGS[i];if(r)r.slamUntil=now()+170;setTimeout(()=>{SND.thud();CAM.shake=Math.max(CAM.shake,.34);STORM.jolt=1;STORM.sw=Math.max(STORM.sw,.55);if(r&&r.root){const p=M4.tp(r.root.w,[0,TABLE_Y,.62]);p[1]=TABLE_Y+.03;puff(p,5,false)}},150)}
 const DEAL={t0:0,seats:[],cards:[],per:48,g:null};
 function dealFx(){const d=G.device;if(!d||!d.g||!d.mkCard)return;const seats=G.players.filter(p=>p.alive&&p.hand&&p.hand.length).map(p=>p.i);for(const c of DEAL.cards)if(c.n&&DEAL.g)DEAL.g.remove(c.n);DEAL.cards=[];DEAL.t0=0;if(!seats.length)return;
@@ -1273,6 +1278,92 @@ function bloomPass(){if(!BL.tried)blInit();if(!BL.ok||BL.off||U.uGP==null||(DBG&
   pass(BL.A,BL.B,1/w,0,1.3,.16);pass(BL.B,BL.A,0,1/h,1,0);pass(BL.A,BL.C,2/w,0,1,0);pass(BL.C,BL.D,0,2/h,1,0);
   gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE);pass(BL.A,null,0,0,.42,0);pass(BL.D,null,0,0,.58,0);gl.disable(gl.BLEND);gl.enable(gl.DEPTH_TEST);gl.useProgram(PRG)}
 function bloomWatch(dt){if(BL.off||!BL.ok||(DBG&&window.__bloom))return;BL.avg+=(dt-BL.avg)*.04;if(BL.avg>.036){BL.bad+=dt;if(BL.bad>4)BL.off=true}else BL.bad=0}
+/* ---------- pouvoirs des animaux (une fois par partie) ---------- */
+const POW=[
+ {n:'Œil du corbeau',e:'👁️',s:'regarde une carte posée',d:'Regarde en secret une des cartes que le joueur précédent vient de poser.'},
+ {n:'Estomac de chèvre',e:'🐐',s:'mange une de tes cartes',d:'Mange une de tes cartes&nbsp;: elle sort du jeu. Touche d’abord la carte à manger, sinon tu manges ta plus mauvaise.'},
+ {n:'Coassement',e:'🐸',s:'change la carte de la table',d:'Change la carte de la table pour celle que tu as le plus en main. Seulement quand aucune carte n’est posée.'},
+ {n:'Barillet',e:'🌀',s:'risque remis à 1 sur 6',d:'Fais tourner ton barillet&nbsp;: ton risque repart à 1 chance sur 6. Utile après au moins un tir.'},
+ {n:'Passe-passe',e:'🦊',s:'échange une carte avec un adversaire',d:'Échange une de tes cartes contre une carte au hasard d’un adversaire (celui que tu regardes, sinon le suivant). Touche d’abord la carte à donner, sinon tu donnes ta plus mauvaise.'},
+ {n:'Coup de patte',e:'🐾',s:'le suivant pose au moins 2 cartes',d:'Le joueur suivant devra poser au moins 2 cartes.'},
+ {n:'Groin fouineur',e:'🐽',s:'renifle 2 cartes d’un adversaire',d:'Regarde en secret 2 cartes au hasard dans la main d’un adversaire (celui que tu regardes, sinon le suivant).'},
+ {n:'Intimidation',e:'💢',s:'personne ne peut te dire menteur',d:'Personne ne pourra dire «&nbsp;Menteur&nbsp;» sur ta prochaine pose.'}];
+const anOf=i=>{const a=G.animals&&G.animals[i];return Number.isInteger(a)&&POW[a]?a:4};
+const isGood=(c,tc)=>c===tc||c==='J';
+const fired=p=>Math.max(0,(p.shots||0)-(p.sp||0));
+const artC=c=>LK[c]?(c==='D'?'une ':'un ')+LK[c][3]:'une carte';
+function nextWith(i){for(let k=1;k<5;k++){const j=(i+k)%5,q=G.players[j];if(q&&q.alive&&!q.absent&&q.hand.length)return j}return -1}
+function tgOk(i,t){const q=Number.isInteger(t)?G.players[t]:null;return!!(q&&t!==i&&q.alive&&!q.absent&&q.hand.length)}
+function oppCards(i){return G.players.some(q=>q.i!==i&&q.alive&&!q.absent&&q.hand.length)}
+function bearTarget(i){if(G.online!=='guest'&&G.pwAdv){const j=G.pwAdv(i);return j>=0&&j!==i?j:-1}return nextWith(i)}
+function bestRank(h,tc){let best=null,bc=0;for(const k of shuffle(['R','D','A'])){if(k===tc)continue;const n=h.filter(c=>c===k).length;if(n>bc){bc=n;best=k}}return best}
+function powCan(i){const p=G.players[i],d=G.device;if(!p||!p.alive||p.absent||p.pwUsed||G.game!=='liar'||!d||d.type!=='menteur'||G.lobby3d)return{hide:1};
+  const c=G.pwCtx,a=anOf(i);if(!c||c.i!==i||G.acting)return{why:'Utilisable seulement pendant ton tour.'};const h=p.hand,last=c.last,play=!c.forced&&!c.fin,np='Pas maintenant&nbsp;: tu dois juger la dernière pose.',ok={ok:1};
+  if(a===0)return last&&last.cards&&last.cards.length?ok:{why:'Il faut des cartes posées par le joueur précédent.'};
+  if(a===1)return!play?{why:np}:h.length<2?{why:'Il te faut au moins 2 cartes.'}:ok;
+  if(a===2)return!play?{why:np}:(last||d.pile.length)?{why:'Seulement quand aucune carte n’est posée sur la table.'}:bestRank(h,d.tc)?ok:{why:'Tu n’as que des cartes de table ou des jokers&nbsp;: inutile.'};
+  if(a===3)return fired(p)<1?{why:'Utile seulement après au moins un tir.'}:ok;
+  if(a===4)return!play?{why:np}:!h.length?{why:'Il te faut une carte.'}:oppCards(i)?ok:{why:'Aucun adversaire n’a de cartes.'};
+  if(a===5)return!play?{why:np}:bearTarget(i)<0?{why:'Personne ne joue après toi.'}:ok;
+  if(a===6)return oppCards(i)?ok:{why:'Aucun adversaire n’a de cartes.'};
+  return!play?{why:np}:ok}
+function usePow(i,opt){opt=opt||{};if(G.online==='guest'||!powCan(i).ok)return null;const p=G.players[i],d=G.device,a=anOf(i),c=G.pwCtx,tc=d.tc,m={t:'pw',who:i,a};p.pwUsed=true;
+  const give=()=>{const s=opt.sel;if(Number.isInteger(s)&&s>=0&&s<p.hand.length)return s;const bad=[];p.hand.forEach((x,k)=>{if(!isGood(x,tc))bad.push(k)});return bad.length?pick(bad):ri(0,p.hand.length-1)};
+  if(a===0){const L=c.last.cards,j=ri(0,L.length-1);m.n=L.length;m.j=j;m.tg=c.last.who;m.priv={card:L[j]}}
+  else if(a===1){const card=p.hand.splice(give(),1)[0];if(d.kn)d.kn.outUnk++;m.priv={card};m.hands=1}
+  else if(a===2){const nt=bestRank(p.hand,tc);d.setTable(nt);m.tc=nt;const k=d.kn;if(k)k.outGood=(k.rev||[]).filter(x=>isGood(x,nt)).length}
+  else if(a===3){p.sp=p.shots;p.bullet=p.shots+ri(0,5);m.sp=p.sp}
+  else if(a===4){const t=tgOk(i,opt.tg)?opt.tg:nextWith(i),q=G.players[t],k=give(),kt=ri(0,q.hand.length-1),gv=p.hand[k],tk=q.hand[kt];p.hand[k]=tk;q.hand[kt]=gv;m.tg=t;m.priv={give:gv,take:tk};m.hands=1}
+  else if(a===5){const t=bearTarget(i);G.paw={who:t,n:2};m.tg=t}
+  else if(a===6){const t=tgOk(i,opt.tg)?opt.tg:nextWith(i),q=G.players[t];m.tg=t;m.priv={cards:shuffle(q.hand.map((_,k)=>k)).slice(0,2).map(k=>q.hand[k])}}
+  else G.immNext=i;
+  if(G.online==='host')for(const cn of NET.conns){const st=NET.seatOf[cn.id];if(st==null)continue;const o=Object.assign({},m,{priv:st===i?m.priv:(a===4&&st===m.tg?{got:m.priv.give,lost:m.priv.take}:null)});if(m.hands)o.hands=G.players.map((q,j)=>j===st?q.hand.slice():q.hand.map(()=>'?'));cn.send(o)}
+  if(DBG)(window.__pw=window.__pw||[]).push({a,who:i,tg:m.tg,priv:m.priv,tc:m.tc,b:p.bullet,s:p.shots});powFx(m,true);return m}
+const PWB=[];
+function powBurst(i){const r=RIGS[i];if(!r||!r.face)return;const n=SCENE.add(N(MS.plane,mat('#b48cff',{tex:TEX.glow,unlit:true,add:true,o:0}),wp(r.face),null,.1));GLOWS.push(n);PWB.push({n,t0:now(),i})}
+function powBurstUpd(){const tn=now();for(let k=PWB.length-1;k>=0;k--){const b=PWB[k],e=(tn-b.t0)/1100,r=RIGS[b.i];if(e>=1||!r){SCENE.remove(b.n);const g=GLOWS.indexOf(b.n);if(g>=0)GLOWS.splice(g,1);PWB.splice(k,1);continue}b.n.p=wp(r.face);const s=.12+e*.55;b.n.s=[s,s,s];b.n.mat.o=Math.sin(e*PI)*.85}}
+function powFx(m,local){const i=m.who,p=G.players[i],a=m.a,P=POW[a],r=RIGS[i],d=G.device;if(!p||!P)return;p.pwUsed=true;G.pwWait=false;
+  if(!local){if(Array.isArray(m.hands))G.players.forEach((q,j)=>{if(Array.isArray(m.hands[j]))q.hand=m.hands[j].map(x=>LK[x]?x:'?')});if(m.tc&&LK[m.tc]&&d)d.setTable(m.tc);if(a===3&&Number.isInteger(m.sp))p.sp=m.sp;if(a===5&&Number.isInteger(m.tg))G.paw={who:m.tg,n:2}}
+  const mine=p.isHuman&&i===G.view&&(!G.online||i===G.me),tg=Number.isInteger(m.tg)?m.tg:-1,tgMe=tg>=0&&G.players[tg].isHuman&&tg===G.view&&(!G.online||tg===G.me),W=NM(i),T=tg>=0?NM(tg):'',pv=m.priv||{};
+  if(mine||tgMe)G.lsel=[];powBurst(i);SND.pow();if(!p.isHuman)say(i,P.n+'&nbsp;!',1800);
+  const Su=mine?'Tu':B(W),vb=(il,tu)=>mine?tu:il;let pub=`${P.e} ${Su} ${vb('utilise','utilises')} ${B(P.n)}`,me='';
+  if(a===0){if(r)r.peekUntil=now()+1700;SND.caw();if(mine&&pv.card){me=`${P.e} Une des cartes de ${B(T)}&nbsp;: <b class="red">${artC(pv.card)}</b>`;if(d.peek)d.peek(m.n,m.j,pv.card)}pub+=` et regarde une carte de ${B(T)}.`}
+  else if(a===1){if(r)r.talkUntil=now()+1500;SND.crunch();if(mine&&pv.card)me=`${P.e} Tu manges ${artC(pv.card)}. Miam.`;pub+=`&nbsp;: une carte en moins.`}
+  else if(a===2){SND.croak();pub=`${P.e} ${Su} ${vb('coasse','coasses')}&nbsp;: la table devient ${B(LK[d.tc][1])}&nbsp;!`;stamp(LK[d.tc][1],false)}
+  else if(a===3){SND.ratchet();setTimeout(()=>SND.ratchet(),260);pub=`${P.e} ${Su} ${vb('fait','fais')} tourner ${vb('son','ton')} barillet&nbsp;: risque remis à 1 chance sur 6.`}
+  else if(a===4){SND.card();setTimeout(()=>SND.slide(),200);if(r&&RIGS[tg]&&!r.reachT){const q=RIGS[tg];rigReach(r,()=>M4.tp(q.root.w,[.2,.9,.43]),8);setTimeout(()=>{if(r.reachT)rigRelease(r)},750)}
+    if(mine&&pv.give)me=`${P.e} Tu donnes ${artC(pv.give)} à ${B(T)} et tu reçois <b class="red">${artC(pv.take)}</b>.`;else if(tgMe&&pv.got)me=`${P.e} ${B(W)} te fait les poches&nbsp;: tu perds ${artC(pv.lost)}, tu reçois ${artC(pv.got)}.`;pub+=`&nbsp;: échange une carte avec ${B(T)}.`}
+  else if(a===5){tableSlam(i);SND.growl();pub=`${P.e} ${mine?'Ton coup de patte':'Coup de patte de '+B(W)}&nbsp;: ${tgMe?'tu devras':B(T)+' devra'} poser au moins 2 cartes.`}
+  else if(a===6){if(r&&tg>=0){r.glT=tg;r.glU=now()+1900}SND.sniff();if(mine&&pv.cards)me=`${P.e} ${B(T)} a&nbsp;: <b class="red">${pv.cards.map(c=>LK[c]?LK[c][3]:'?').join(', ')}</b>`;else if(tgMe)me=`${P.e} ${B(W)} renifle tes cartes…`;pub+=`&nbsp;: renifle les cartes de ${B(T)}.`}
+  else{tableSlam(i);SND.snort();pub=`${P.e} ${Su} ${vb('intimide','intimides')} la table&nbsp;: personne ne pourra ${vb('le','te')} traiter de menteur sur ${vb('sa','ta')} prochaine pose.`}
+  log(pub);toast(me||pub,me?3600:2600);render()}
+function powUi(){const b=$('#pwBtn');if(!b)return;const v=G.view,p=G.players[v],show=!!(p&&G.game==='liar'&&p.isHuman&&!G.lobby3d&&!G.spectate&&G.players.length&&(!G.online||v===G.me));
+  const st=show?powCan(v):{hide:1};if(st.hide){b.hidden=true;powPop(false);return}b.hidden=false;const a=anOf(v),ok=!!st.ok&&G.ui==='liar'&&!G.pwWait;b.classList.toggle('ok',ok);b.classList.toggle('dim',!ok);
+  if(b.dataset.a!==String(a)){b.dataset.a=a;b.innerHTML=`<span class="pe">${POW[a].e}</span><span class="pn"><small>Pouvoir</small>${POW[a].n}</span>`}
+  const me=$('#me');if(me&&me.offsetParent){const R=me.getBoundingClientRect(),S=b.offsetParent?b.offsetParent.getBoundingClientRect():{left:0};b.style.left=Math.round(R.right-S.left+8)+'px'}
+  if(PWP.open)powPop(true)}
+const PWP={open:false};
+function powPop(on){const el=$('#pwPop');if(!el)return;PWP.open=!!on;if(!on){el.hidden=true;return}const v=G.view,a=anOf(v),st=powCan(v),ok=!!st.ok&&G.ui==='liar'&&!G.pwWait;
+  const key=a+'|'+ok+'|'+(st.why||'');if(el.dataset.k!==key){el.dataset.k=key;el.innerHTML=`<div class="pt">${POW[a].e} ${POW[a].n}</div><div>${POW[a].d}</div><div class="pw">${ok?'Une seule fois par partie.':(st.why||'')}</div><div class="pb">${ok?'<button class="btn" data-pwgo>Utiliser</button>':''}<button class="btn" data-pwx>${ok?'Annuler':'OK'}</button></div>`}
+  el.hidden=false;const b=$('#pwBtn'),W=el.offsetParent?el.offsetParent.clientWidth:innerWidth;if(b&&!b.hidden)el.style.left=Math.max(8,Math.min(parseInt(b.style.left||'8')-40,W-el.offsetWidth-8))+'px'}
+function powGo(){const v=G.view;powPop(false);if(G.ui!=='liar'||!powCan(v).ok)return;const tg=lookTarget(v),sel=G.lsel.length===1?G.lsel[0]:-1;
+  if(G.online==='guest'){if(NET.host){G.pwWait=true;NET.host.send({t:'pwu',tg,sel});setTimeout(()=>{if(G.pwWait){G.pwWait=false;render()}},4000)}render();return}usePow(v,{tg,sel})}
+document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('#pwBtn,[data-pwgo],[data-pwx]');if(!t)return;e.preventDefault();e.stopPropagation();
+  if(t.id==='pwBtn'){SND.click&&SND.tone(660,.06,{g:.04});powPop(!PWP.open);return}if(t.hasAttribute('data-pwgo'))powGo();else powPop(false)},true);
+function botPow(i,last,d,forced,fin,ph){const p=G.players[i];if(!p||p.isHuman||G.online==='guest'||p.pwUsed||!G.pwCtx||G.pwCtx.i!==i)return null;const a=anOf(i);if(!powCan(i).ok)return null;
+  const tc=d.tc,good=p.hand.filter(c=>isGood(c,tc)).length,bad=p.hand.length-good,play=!forced&&!fin;let go=false;
+  if(ph==='pre'){if(a===0&&last){const L=lieProb(i,last,d);go=L>.18&&L<.88&&rand()<.8}else if(a===3)go=fired(p)>=2||(fired(p)>=1&&rand()<.3);else if(a===6)go=rand()<.25}
+  else if(play){if(a===1)go=bad>=1&&good>=1&&p.hand.length>=2&&rand()<.5;else if(a===2){const br=bestRank(p.hand,tc),n=br?p.hand.filter(c=>c===br).length:0;go=!last&&n>=2&&good<=1}
+    else if(a===4)go=good===0&&bad>=1&&rand()<.65;else if(a===5){const t=bearTarget(i);go=t>=0&&G.players[t].hand.length>=2&&rand()<.3}else if(a===7)go=good===0&&rand()<.85}
+  if(!go)return null;const m=usePow(i,{});if(!m)return null;if(a===0)return{lie:!isGood(m.priv.card,tc)};if(a===6)p.sniff={who:m.tg,cards:m.priv.cards};return{}}
+Object.assign(SND,{
+  pow(){if(!this.ok())return;[784,1047,1568].forEach((f,k)=>this.tone(f,.5,{g:.035,delay:k*.07,rv:.8}))},
+  caw(){if(!this.ok())return;[0,.28].forEach(d=>this.tone(760,.2,{type:'sawtooth',f2:430,lp:2200,g:.06,delay:d,rv:.5}))},
+  crunch(){if(!this.ok())return;for(let k=0;k<5;k++)this.noise(.05,{f:2200+rand()*1800,q:1.3,g:.16,delay:k*.13+rand()*.04,rv:.2})},
+  croak(){if(!this.ok())return;[0,.32].forEach(d=>{this.tone(118,.24,{type:'sawtooth',f2:84,lp:640,g:.12,delay:d,rv:.4});this.noise(.2,{type:'lowpass',f:500,g:.05,delay:d,rv:.3})})},
+  growl(){if(!this.ok())return;this.tone(82,.7,{type:'sawtooth',f2:62,lp:380,g:.12,a:.08,rv:.4});this.noise(.6,{type:'lowpass',f:300,g:.1,a:.08,rv:.3})},
+  sniff(){if(!this.ok())return;for(let k=0;k<3;k++)this.noise(.09,{type:'highpass',f:2600,g:.08,a:.03,delay:k*.16,rv:.2});this.tone(240,.18,{type:'square',f2:170,lp:700,g:.035,delay:.55,rv:.3})},
+  snort(){if(!this.ok())return;this.noise(.42,{type:'lowpass',f:520,f2:220,g:.26,a:.02,rv:.4})}});
 /*</CH2>*/
 const LOOKS=[
  {skin:'#3d3d4e',cloth:'#3a4232',shW:.19,headS:[.92,1.12,.96],tagH:.33,arm:[.34,.35,.042,.037],
@@ -1483,17 +1574,18 @@ const NUM=['','Un','Deux','Trois'];
 function claimTxt(n,tc){return`${n===1?(tc==='D'?'Une':'Un'):NUM[n]} ${n>1?cap(LK[tc][1].toLowerCase()):LK[tc][3]}.`}
 function lcMat(k){M.lc=M.lc||{};if(M.lc[k])return M.lc[k];const c=cvs(128,128),x=c.getContext('2d');x.fillStyle='#efe5cf';x.fillRect(0,0,128,128);x.strokeStyle='#6e5430';x.lineWidth=6;x.strokeRect(6,6,116,116);x.fillStyle=LK[k][2];x.font='bold 84px Georgia, serif';x.textAlign='center';x.textBaseline='middle';x.fillText(LK[k][0],64,70);return M.lc[k]=mat('#ffffff',{tex:mkTex(c,false),sp:.2})}
 function Menteur(){return devInit({type:'menteur',name:'Le Menteur',slide:0,
-  rule:'Chaque manche a sa carte de table&nbsp;: Rois, Dames ou As. À ton tour, pose 1 à 3 cartes face cachée en jurant que ce sont des cartes de table (les Jokers comptent). Le joueur suivant te croit… ou crie «&nbsp;Menteur&nbsp;!». On retourne les cartes&nbsp;: celui qui a tort presse la détente. La manche continue ensuite avec les mêmes cartes, jusqu’à ce qu’un joueur vide sa main&nbsp;: dernier tour de table, puis on redistribue.',
+  rule:'Chaque manche a sa carte de table&nbsp;: Rois, Dames ou As. À ton tour, pose 1 à 3 cartes face cachée en jurant que ce sont des cartes de table (les Jokers comptent). Le joueur suivant te croit… ou crie «&nbsp;Menteur&nbsp;!». On retourne les cartes&nbsp;: celui qui a tort presse la détente. La manche continue ensuite avec les mêmes cartes, jusqu’à ce qu’un joueur vide sa main&nbsp;: dernier tour de table, puis on redistribue. ✦ Chaque animal a un pouvoir, utilisable une seule fois par partie pendant son tour (bouton violet en bas).',
   tc:'R',pile:[],
   build(){const g=this.g;g.add(N(TOR(.5,.007),mat('#000000',{e:[.45,.85,.6]}),[0,.004,.05]));if(!M.cardBack.tex){const c=cvs(64,64),x=c.getContext('2d');x.fillStyle='#4a1016';x.fillRect(0,0,64,64);x.strokeStyle='#d9c08a';x.lineWidth=1.5;for(let k=-64;k<128;k+=10){x.beginPath();x.moveTo(k,0);x.lineTo(k+64,64);x.moveTo(k+64,0);x.lineTo(k,64);x.stroke()}x.lineWidth=7;x.strokeStyle='#efe5cf';x.strokeRect(0,0,64,64);M.cardBack.tex=mkTex(c,false);M.cardBack.c=[1,1,1]}
     this.tcN=g.add(N(null,null,[0,0,-.3]));this.tcN.add(N(MS.box,mat('#c9a46a',{sp:1,sh:40,e:[.1,.07,.02]}),[0,.004,.02],null,[.2,.008,.27]));this.tcN.add(N(TOR(.2,.006),mat('#000000',{e:[1.1,.75,.25],add:true,unlit:true}),[0,.01,.02],null,[1,1,1.35]));this.setTable('R')},
   setTable(k){this.tc=k;if(this.tcN){if(this.tcC)this.tcN.remove(this.tcC);const c=this.tcC=this.mkCard(k);c.p=[0,.075,.02];c.r=[.62,0,0];c.s=[2,2,2];this.tcN.add(c)}},
   mkCard(k,nf){const c=N(null,null);c.add(N(MS.box,M.cardBack,null,null,[.085,.004,.12]));if(!nf&&LK[k])c.add(N(MS.plane,lcMat(k),[0,.0027,0],[-PI/2,0,0],[.082,.117,1]));return c},
   clear(){for(const c of this.pile)this.g.remove(c.n);this.pile=[]},
+  peek(n,j,k){const c=this.pile.slice(-n)[j];if(!c)return;if(!LK[c.k]&&LK[k]){c.k=k;c.n.add(N(MS.plane,lcMat(k),[0,.0027,0],[-PI/2,0,0],[.082,.117,1]))}c.pk=now()},
   playCards(a,cards){calmFingers();const from=Q.rot(Q.axis([0,1,0],-this.ang),V3.sub(M4.tp(RIGS[a].root.w,[0,.86,.5]),[0,TABLE_Y,0]));cards.forEach((k,j)=>{const n=this.mkCard(k);this.g.add(n);const idx=this.pile.length;
     this.pile.push({n,k,from,to:[(rand()-.5)*.14+(j-(cards.length-1)/2)*.06,.016+idx*.0045,.1+(rand()-.5)*.12],t0:now()+j*90,dur:420,yaw:rand()*TAU,rev:0});n.p=from.slice();n.r=[0,0,PI]})},
   reveal(n,cards){this.pile.slice(-n).forEach((c,j)=>{if(cards&&!LK[c.k]&&LK[cards[j]]){c.k=cards[j];c.n.add(N(MS.plane,lcMat(c.k),[0,.0027,0],[-PI/2,0,0],[.082,.117,1]))}c.from=c.n.p.slice();c.to=[(j-(n-1)/2)*.13,.06,.34];c.t0=now();c.dur=500;c.rev=now()})},
-  async prepare(){},risk(i){const p=G.players[i];return p?p.shots/5:0},
+  async prepare(){},risk(i){const p=G.players[i];return p?fired(p)/5:0},
   hand:[],hkey:'',
   syncHand(){const v=G.view,p=G.players[v];if(!p)return;const ok=p.isHuman&&p.alive,show=ok&&(!!G.online||G.humans===1||G.ui==='liar');const dn=dealCount(v,p.hand.length),key=v+'|'+p.hand.join('')+'|'+show+'|'+ok+'|'+dn;if(key===this.hkey)return;this.hkey=key;for(const c of this.hand)this.g.remove(c);this.hand=[];
     if(ok)p.hand.slice(0,dn).forEach(k=>{const c=this.mkCard(k,!show);c.s=[1.55,1.55,1.55];this.g.add(c);this.hand.push(c)});this.place(1)},
@@ -1501,14 +1593,14 @@ function Menteur(){return devInit({type:'menteur',name:'Le Menteur',slide:0,
   syncFans(){for(let i=0;i<5;i++){const r=RIGS[i],p=G.players[i];if(!r||!p)continue;const n=p.alive&&i!==G.view?dealCount(i,p.hand.length):0;if(r.fanC===n)continue;r.fanC=n;if(r.fanN)r.root.remove(r.fanN);r.fanN=null;r.holdT=null;if(!n)continue;
     const f=r.fanN=r.root.add(N(null,null,[.2,.99,.44]));for(let j=0;j<n;j++){const c=f.add(N(MS.box,M.cardBack,null,null,[.085,.004,.12]));const q=Q.mul(Q.axis([1,0,0],1.94),Q.axis([0,1,0],(j-(n-1)/2)*.25));c.q=q;c.p=Q.rot(q,[0,j*.003,-.07])}r.holdT=()=>M4.tp(r.root.w,[.2,.9,.43])}},
   update(dt,t){this.syncHand();this.syncFans();this.place(1-Math.exp(-12*dt));for(const c of this.pile){const p=ease(prog(c.t0,c.dur));const q=V3.lerp(c.from,c.to,p);q[1]+=Math.sin(p*PI)*.12;c.n.p=q;
-    if(c.rev){const pr=ease(prog(c.rev,500));c.n.r=[0,c.yaw*(1-pr),PI*(1-pr)];const s=1+.35*pr;c.n.s=[s,s,s]}else c.n.r=[0,c.yaw*p,PI]}},
+    if(c.rev){const pr=ease(prog(c.rev,500));c.n.r=[0,c.yaw*(1-pr),PI*(1-pr)];const s=1+.35*pr;c.n.s=[s,s,s]}else if(c.pk){const e=(now()-c.pk)/2600;if(e>=1)c.pk=0;const u=e>=1?0:Math.min(1,e*5)*Math.min(1,(1-e)*5),k=ease(u);q[1]+=k*.09;q[2]+=k*.12;c.n.p=q;c.n.r=[-k*.5,c.yaw*p*(1-k),PI*(1-k)];const s=1+.5*k;c.n.s=[s,s,s]}else c.n.r=[0,c.yaw*p,PI]}},
   tap(sx,sy){if(G.ui!=='liar'||!G.lcan.play)return;const k=pickNear(sx,sy,this.hand.map(c=>wp(c)),48);if(k<0)return;const j=G.lsel.indexOf(k);if(j>=0)G.lsel.splice(j,1);else if(G.lsel.length<3)G.lsel.push(k);SND.card();render()},controls(){return''},humanHint(){return''}})}
 function renderLiarCards(){const p=G.players[G.view]||G.players[0];const show=p.isHuman&&(!!G.online||G.humans===1||G.ui==='liar');const hand=p.hand||[];const tc=G.device&&G.device.tc;
   $('#cards').innerHTML=hand.map((c,k)=>show?`<button class="card ${G.lsel.includes(k)?'sel':''} ${G.ui==='liar'&&G.lcan.play&&(c===tc||c==='J')?'live':''}" data-k="${k}"><span class="ci" style="color:${LK[c][2]}">${LK[c][0]}</span><span class="cn">${LK[c][3]}</span></button>`:'<div class="card back"></div>').join('')||'<div class="nocards">Plus de cartes en main.</div>';$('#cardInfo').classList.remove('show')}
 function liarControls(){if(G.ui==='ready')return`<button class="btn big pulse" data-ready>📱 ${NM(G.view)}&nbsp;: voir mes cartes</button>`;if(G.ui!=='liar')return'';const n=G.lsel.length;
-  return(G.lcan.play?`<button class="btn" data-lplay ${n?'':'disabled'}>Poser ${n||''} carte${n>1?'s':''}<small>${n?'«&nbsp;'+claimTxt(n,G.device.tc)+'&nbsp;»':'touche tes cartes sur la table'}</small></button>`:'')+(G.lcan.call?`<button class="btn lie" data-lcall>MENTEUR&nbsp;!<small>${G.lcan.play||G.lcan.next?'je ne te crois pas':'obligé&nbsp;: tu es le dernier'}</small></button>`:'')+(G.lcan.next?'<button class="btn" data-lnext>Nouvelle manche<small>je te crois</small></button>':'')}
+  const mn=G.lcan.min||1;return(G.lcan.play?`<button class="btn" data-lplay ${n>=mn?'':'disabled'}>Poser ${n||''} carte${n>1?'s':''}<small>${n>=mn?'«&nbsp;'+claimTxt(n,G.device.tc)+'&nbsp;»':mn>1?'🐾 au moins '+mn+' cartes':'touche tes cartes sur la table'}</small></button>`:'')+(G.lcan.call?`<button class="btn lie" data-lcall>MENTEUR&nbsp;!<small>${G.lcan.play||G.lcan.next?'je ne te crois pas':'obligé&nbsp;: tu es le dernier'}</small></button>`:'')+(G.lcan.next?'<button class="btn" data-lnext>Nouvelle manche<small>je te crois</small></button>':'')}
 function liarHint(){const d=G.device;if(!d||d.type!=='menteur')return'';const tc=B(LK[d.tc][1]);if(G.ui==='ready')return`<span class="you">Passe l’appareil</span>À ${B(NM(G.view))} de jouer.`;
-  if(G.ui==='liar'){const l=G.llast;return`<span class="you">${YOU(G.view)?'À toi':'À '+NM(G.view)}</span>Table&nbsp;: ${tc}. ${l?`${B(NM(l.who))} a posé ${l.cards.length} carte${l.cards.length>1?'s':''}.`:'Tu ouvres&nbsp;: pose 1 à 3 cartes.'}${G.lcan.next?' Dernière pose de la manche&nbsp;: menteur, ou nouvelle manche&nbsp;?':''}`}
+  if(G.ui==='liar'){const l=G.llast;return`<span class="you">${YOU(G.view)?'À toi':'À '+NM(G.view)}</span>Table&nbsp;: ${tc}. ${l?`${B(NM(l.who))} a posé ${l.cards.length} carte${l.cards.length>1?'s':''}.`:'Tu ouvres&nbsp;: pose 1 à 3 cartes.'}${G.lcan.next?' Dernière pose de la manche&nbsp;: menteur, ou nouvelle manche&nbsp;?':''}${(G.lcan.min||1)>1?' 🐾 Coup de patte&nbsp;: pose au moins '+G.lcan.min+' cartes.':''}${l&&l.imm&&!G.lcan.call?' 💢 Intimidé&nbsp;: tu ne peux pas dire «&nbsp;Menteur&nbsp;».':''}`}
   const a=G.actor;return`Table&nbsp;: ${tc}${a>=0&&G.players[a].alive&&!YOU(a)?` — ${NM(a)} ${G.acting?'agit':'réfléchit'}…`:''}`}
 function binomGE(H,r,n){let s=0;for(let x=n;x<=H;x++){let c=1;for(let k=0;k<x;k++)c=c*(H-k)/(k+1);s+=c*Math.pow(r,x)*Math.pow(1-r,H-x)}return clamp(s,0,1)}
 function lieProb(i,last,d){const p=G.players[i],lp=G.players[last.who],tc=d.tc,n=last.cards.length,kn=d.kn||{good:8,outGood:0,outUnk:0};
@@ -1516,15 +1608,16 @@ function lieProb(i,last,d){const p=G.players[i],lp=G.players[last.who],tc=d.tc,n
   let O=n+kn.outUnk+(kn.und||0)+Math.max(0,(kn.pile||0)-n);for(const q of G.players)if(q.alive&&q.i!==i)O+=q.hand.length;
   const r=clamp(Gr/Math.max(1,O),0,1),H=lp.hand.length+n,hon=binomGE(H,r,n);
   let lp0=1-hon*.88;const rate=(lp.lies||0)/Math.max(1,lp.claims||0);if((lp.claims||0)>=2)lp0=lp0*.7+rate*.3;if(lp.hand.length===0)lp0=Math.min(1,lp0+.06);return clamp(lp0,0,1)}
-async function liarBot(i,last,forced,d,fin){await sleep(700+rand()*800);const p=G.players[i],P=p.persona,tc=d.tc;const good=[],bad=[];p.hand.forEach((c,k)=>(c===tc||c==='J'?good:bad).push(k));
-  if(forced)return{call:true};
-  if(last){const L=lieProb(i,last,d),thr=.56-(P.cruelty||.4)*.12+(p.shots||0)*.03+gauss()*.06+(good.length===0&&!fin?-.12:0);if(L>=.97||L>thr)return{call:true}}
+async function liarBot(i,last,forced,d,fin){await sleep(700+rand()*800);const p=G.players[i],P=p.persona;const pk=botPow(i,last,d,forced,fin,'pre')||{};const tc=d.tc;let good=[],bad=[];p.hand.forEach((c,k)=>(c===tc||c==='J'?good:bad).push(k));
+  if(forced)return{call:true};const mn=Math.min(3,Math.max(1,(G.turnRule&&G.turnRule.min)||1));
+  if(last&&!last.imm){let L=lieProb(i,last,d);if(pk.lie!=null)L=pk.lie?1:L*.5;if(p.sniff&&p.sniff.who===last.who){const kc=p.sniff.cards;if(kc.every(c=>!isGood(c,tc)))L=Math.min(1,L+.22);else if(kc.every(c=>isGood(c,tc)))L*=.7;p.sniff=null}const thr=.56-(P.cruelty||.4)*.12+fired(p)*.03+gauss()*.06+(good.length===0&&!fin?-.12:0);if(L>=.97||L>thr)return{call:true}}
   if(fin)return{next:true};
-  if(good.length===0||(bad.length>0&&rand()<P.lie*.6))return{cards:shuffle(bad.slice()).slice(0,Math.min(bad.length,rand()<.65?1:2))};
-  return{cards:good.slice(0,Math.min(good.length,rand()<.6?1:rand()<.8?2:3))}}
+  if(botPow(i,last,d,forced,fin,'play')){good=[];bad=[];p.hand.forEach((c,k)=>(c===d.tc||c==='J'?good:bad).push(k))}
+  let cs;if(good.length===0||(bad.length>0&&rand()<P.lie*.6&&G.immNext!==i))cs=shuffle(bad.slice()).slice(0,Math.min(bad.length,rand()<.65?1:2));else if(G.immNext===i&&bad.length)cs=shuffle(bad.slice()).slice(0,Math.min(bad.length,3));else cs=good.slice(0,Math.min(good.length,rand()<.6?1:rand()<.8?2:3));
+  for(const k of[...good,...bad])if(cs.length<mn&&!cs.includes(k))cs.push(k);return{cards:cs}}
 async function liarHuman(i,last,forced,fin){const tok=G.turnTok;if(G.online==='host'&&G.players[i].remote){G.llast=last;render();const tk=TOKEN;const dec=await new Promise(res=>{NET.wait[i]={res,tk,tid:TID}});if(dec&&dec.cancel)return dec;return okDec(G.players[i],dec,last,forced,fin)||await liarBot(i,last,fin?false:forced,G.device,fin)}
   if(G.autoplay)return liarBot(i,last,fin?false:forced,G.device,fin);if(!G.online){G.view=i;G.focus=i}G.llast=last;if(G.humans>1&&!G.online){G.ui='ready';await waitInput('ready');if(tok!==G.turnTok){G.ui='';render();return{cancel:true}}}
-  if(tok!==G.turnTok)return{cancel:true};G.lsel=[];G.lcan={call:!!last,play:!forced,next:!!fin};G.ui='liar';SND.turn();startHeart();let inp;try{inp=await waitInput('liar')}finally{stopHeart()}G.ui='';G.lsel=[];render();return inp}
+  if(tok!==G.turnTok)return{cancel:true};G.lsel=[];G.lcan={call:!!last&&(!last.imm||forced),play:!forced,next:!!fin,min:(G.turnRule&&G.turnRule.min)||1};G.ui='liar';SND.turn();startHeart();let inp;try{inp=await waitInput('liar')}finally{stopHeart()}G.ui='';G.lsel=[];render();return inp}
 const OC={open:false,last:null,cur:-1,res:null,seq:0};let PSEQ=0,TID=0,TT=null;
 function ocOpen(last,cur){OC.open=true;OC.last=last;OC.cur=cur;OC.seq=PSEQ;return new Promise(res=>{OC.res=res})}
 function ocOk(i){if(!OC.open||!G.freeCall||!OC.last)return false;const p=G.players[i];return!!(p&&p.alive&&!p.absent&&i!==OC.last.who&&i!==OC.cur)}
@@ -1540,7 +1633,7 @@ function ocBots(last,cur,d){const tk=TOKEN;for(const p of G.players){const j=p.i
 function cancelTurn(i){G.turnTok++;G.ui='';G.lsel=[];stopHeart&&stopHeart();giveInput('liar',{cancel:true});giveInput('ready',{cancel:true});const w=NET.wait&&NET.wait[i];if(w){delete NET.wait[i];w.res({cancel:true})}render()}
 function turnTimer(cur){clearTurnTimer();const tk=TOKEN;return new Promise(res=>{const warn=setTimeout(()=>{if(tk!==TOKEN)return;const p=G.players[cur];if(p.remote){const c=connOf(cur);c&&c.send({t:'hurry'})}else{toast('⏱ Plus que 15 secondes pour jouer, sinon un robot joue à ta place',3200);SND.tick()}},30000),end=setTimeout(()=>{if(tk===TOKEN)res()},45000);TT=[warn,end]})}
 function clearTurnTimer(){if(TT){TT.forEach(clearTimeout);TT=null}}
-async function decide(cur,last,forced,fin,d){const P=G.players[cur],free=G.freeCall&&!!last,bot=()=>liarBot(cur,last,fin?false:forced,d,fin);let dec=null,caller=-1;
+async function decide(cur,last,forced,fin,d){const P=G.players[cur],free=G.freeCall&&!!last&&!last.imm,bot=()=>liarBot(cur,last,fin?false:forced,d,fin);let dec=null,caller=-1;
   const pd=P.isHuman?liarHuman(cur,last,forced,fin):(free?sleep(1300).then(bot):bot());pd.catch(()=>{});const rs=[pd.then(x=>({dec:x}))];
   if(free){rs.push(ocOpen(last,cur).then(i=>({oc:i})));ocBots(last,cur,d);render()}
   if(G.online==='host'&&P.isHuman&&(P.remote||!G.autoplay))rs.push(turnTimer(cur).then(()=>({tmo:1})));
@@ -1550,26 +1643,27 @@ async function decide(cur,last,forced,fin,d){const P=G.players[cur],free=G.freeC
   else dec=r.dec;
   if(caller<0&&(!dec||dec.cancel))dec=await bot();return{dec,caller}}
 async function runLiar(){const d=G.device=Menteur();setTimeout(()=>{SND.thud();CAM.shake=Math.max(CAM.shake,.3)},140);G.focus=-1;let starter=pick(G.players.filter(p=>p.alive)).i;G.round=1;render();await showIntro(d);G.round=0;
-  while(aliveCount()>1){G.round++;d.clear();const nA=G.players.filter(p=>p.alive).length,need=Math.max(20,nA*5),nJ=need>20?4:2,per=Math.ceil((need-nJ)/3),deck=shuffle([...'R'.repeat(per)+'D'.repeat(per)+'A'.repeat(per)+'J'.repeat(nJ)]);d.kn={good:per+nJ,outGood:0,outUnk:0,pile:0};G.players.forEach(p=>{p.hand=p.alive?deck.splice(0,5):[]});d.kn.und=deck.length;d.setTable(pick(['R','D','A']));bcHands('round',{round:G.round,tc:d.tc});dealFx();G.actor=-1;G.llast=null;render();toast(`Manche ${G.round} — table&nbsp;: ${LK[d.tc][1]}`,1600);await sleep(1500);
+  while(aliveCount()>1){G.round++;d.clear();const nA=G.players.filter(p=>p.alive).length,need=Math.max(20,nA*5),nJ=need>20?4:2,per=Math.ceil((need-nJ)/3),deck=shuffle([...'R'.repeat(per)+'D'.repeat(per)+'A'.repeat(per)+'J'.repeat(nJ)]);d.kn={good:per+nJ,outGood:0,outUnk:0,pile:0,rev:[]};G.paw=null;G.immNext=null;G.pwCtx=null;G.players.forEach(p=>{p.hand=p.alive?deck.splice(0,5):[]});d.kn.und=deck.length;d.setTable(pick(['R','D','A']));bcHands('round',{round:G.round,tc:d.tc});dealFx();G.actor=-1;G.llast=null;render();toast(`Manche ${G.round} — table&nbsp;: ${LK[d.tc][1]}`,1600);await sleep(1500);
     let cur=starter,last=null,stopAt=-1;
     const adv=c=>{for(let k=1;k<=5;k++){const j=(c+k)%5;if(j===stopAt)return -1;const q=G.players[j];if(q.alive&&q.hand.length)return j}return -1};
     if(!G.players[cur].alive||!G.players[cur].hand.length)cur=adv(cur);
     while(cur>=0&&aliveCount()>1){const P=G.players[cur];if(last&&last.who===cur)last=null;G.actor=cur;render();
-      const withC=G.players.filter(p=>p.alive&&p.hand.length);const forced=!!last&&withC.length===1&&stopAt<0;bc({t:'turn',a:cur,forced,fin:false,tid:++TID,last:last?{who:last.who,n:last.cards.length}:null});
-      const{dec,caller}=await decide(cur,last,forced,false,d);
+      const withC=G.players.filter(p=>p.alive&&p.hand.length);const forced=!!last&&withC.length===1&&stopAt<0;const imm=!!(last&&last.imm)&&!forced,mn=G.paw&&G.paw.who===cur?Math.max(1,Math.min(2,P.hand.length)):1;G.turnRule={min:mn,imm};G.pwAdv=adv;G.pwCtx={i:cur,last,forced,fin:false};bc({t:'turn',a:cur,forced,fin:false,tid:++TID,last:last?{who:last.who,n:last.cards.length}:null,min:mn,imm});render();
+      const{dec,caller}=await decide(cur,last,forced,false,d);G.pwCtx=null;G.turnRule=null;if(G.paw&&G.paw.who===cur)G.paw=null;const imP=G.immNext===cur;G.immNext=null;
       if((caller>=0||dec.call)&&last){const cw=caller>=0?caller:cur;bc({t:'call',who:cw,ooc:caller>=0,cards:last.cards});const shot=await liarCall(cw,last,d);const dh=G.players[shot].hand.slice();
-        await liarShot(shot);if(aliveCount()<=1)break;if(!G.players[shot].alive)await reshuffleHands(deck,dh);if(d.kn&&last){const k=d.kn;k.outGood+=last.cards.filter(c=>c===d.tc||c==='J').length;k.outUnk+=Math.max(0,k.pile-last.cards.length);k.pile=0}d.clear();bc({t:'clear'});last=null;G.llast=null;
+        await liarShot(shot);if(aliveCount()<=1)break;if(!G.players[shot].alive)await reshuffleHands(deck,dh);if(d.kn&&last){const k=d.kn;(k.rev=k.rev||[]).push(...last.cards);k.outGood+=last.cards.filter(c=>c===d.tc||c==='J').length;k.outUnk+=Math.max(0,k.pile-last.cards.length);k.pile=0}d.clear();bc({t:'clear'});last=null;G.llast=null;
         if(G.freeCall)cur=(G.players[cur].alive&&G.players[cur].hand.length&&cur!==stopAt)?cur:adv(cur);else cur=stopAt>=0?adv(cur):adv(shot);continue}
-      const cs=(dec.cards||[0]).slice().sort((a,b)=>b-a).map(k=>P.hand.splice(k,1)[0]);bcPlay(cur,cs,++PSEQ);G.acting=true;render();rigReach(RIGS[cur],()=>wp(d.g,[0,.08,.1]));await sleep(380);d.playCards(cur,cs);SND.card();SND.slide();
-      if(P.isHuman)toast(`${YOU(cur)?ME():P.name}&nbsp;: «&nbsp;${claimTxt(cs.length,d.tc)}&nbsp;»`,1300);else say(cur,claimTxt(cs.length,d.tc));await sleep(700);rigRelease(RIGS[cur]);G.acting=false;last={who:cur,cards:cs};if(d.kn)d.kn.pile+=cs.length;dbg('plays');render();await sleep(450);
+      const cs=(dec.cards||[0]).slice().sort((a,b)=>b-a).map(k=>P.hand.splice(k,1)[0]);bcPlay(cur,cs,++PSEQ,imP);G.acting=true;render();rigReach(RIGS[cur],()=>wp(d.g,[0,.08,.1]));await sleep(380);d.playCards(cur,cs);SND.card();SND.slide();
+      if(P.isHuman)toast(`${YOU(cur)?ME():P.name}&nbsp;: «&nbsp;${claimTxt(cs.length,d.tc)}&nbsp;»`,1300);else say(cur,claimTxt(cs.length,d.tc));await sleep(700);rigRelease(RIGS[cur]);G.acting=false;last={who:cur,cards:cs,imm:imP};if(DBG)(window.__plz=window.__plz||[]).push([cur,cs.length,imP,P.hand.length]);if(d.kn)d.kn.pile+=cs.length;dbg('plays');render();await sleep(450);
       if(!P.hand.length&&stopAt<0){stopAt=cur;bc({t:'lastlap',who:cur});SND.bell();toast(`${S(cur)} ${V(cur,'a','as')} vidé sa main — dernier tour&nbsp;!`,1900);await sleep(1500)}
       cur=adv(cur)}
-    if(aliveCount()>1&&stopAt>=0&&last&&last.who!==stopAt&&G.players[stopAt].alive){const f=stopAt,P=G.players[f];G.actor=f;render();bc({t:'turn',a:f,forced:true,fin:true,tid:++TID,last:{who:last.who,n:last.cards.length}});
-      const{dec,caller}=await decide(f,last,true,true,d);
+    if(aliveCount()>1&&stopAt>=0&&last&&last.who!==stopAt&&G.players[stopAt].alive&&last.imm){toast(`💢 ${B(NM(last.who))} a intimidé la table&nbsp;: personne ne vérifie sa dernière pose.`,2200);await sleep(1400)}
+    else if(aliveCount()>1&&stopAt>=0&&last&&last.who!==stopAt&&G.players[stopAt].alive){const f=stopAt,P=G.players[f];G.actor=f;G.turnRule={min:1,imm:false};G.pwCtx={i:f,last,forced:true,fin:true};render();bc({t:'turn',a:f,forced:true,fin:true,tid:++TID,last:{who:last.who,n:last.cards.length}});
+      const{dec,caller}=await decide(f,last,true,true,d);G.pwCtx=null;G.turnRule=null;
       if(caller>=0||dec.call){const cw=caller>=0?caller:f;bc({t:'call',who:cw,ooc:caller>=0,cards:last.cards});const shot=await liarCall(cw,last,d);await liarShot(shot)}}
     if(aliveCount()<=1)break;
     bc({t:'roundEnd'});toast('Fin de la manche',1200);await sleep(1100);starter=nextAlive(stopAt>=0?stopAt:starter)}}
-async function liarCall(cur,last,d){const P=G.players[cur];G.acting=true;render();stamp('MENTEUR !',true);SND.wrong();tableSlam(cur);if(!P.isHuman)say(cur,'Menteur !');gesture(cur,last.who,1300);{const r=RIGS[cur];if(r){r.fuckUntil=now()+1900/Math.max(1,G.speed*.7);r.fkT=last.who;r.glT=last.who;r.glU=r.fuckUntil}}await sleep(1200);d.reveal(last.cards.length,last.cards);SND.card();await sleep(1200);
+async function liarCall(cur,last,d){const P=G.players[cur];if(DBG)(window.__clz=window.__clz||[]).push([cur,last.who,!!last.imm]);G.acting=true;render();stamp('MENTEUR !',true);SND.wrong();tableSlam(cur);if(!P.isHuman)say(cur,'Menteur !');gesture(cur,last.who,1300);{const r=RIGS[cur];if(r){r.fuckUntil=now()+1900/Math.max(1,G.speed*.7);r.fkT=last.who;r.glT=last.who;r.glU=r.fuckUntil}}await sleep(1200);d.reveal(last.cards.length,last.cards);SND.card();await sleep(1200);
   const lied=last.cards.some(c=>c!==d.tc&&c!=='J');dbg('calls');if(lied)dbg('hits');const Lp=G.players[last.who];Lp.claims++;if(lied)Lp.lies++;stamp(lied?'MENSONGE':'VÉRITÉ',lied);if(lied)SND.sting();else SND.chime();await sleep(1600);G.acting=false;return lied?last.who:cur}
 async function reshuffleHands(deck,dead){const al=G.players.filter(p=>p.alive&&p.hand.length);if(!al.length)return;const n=al.map(p=>p.hand.length),pool=deck.splice(0);pool.push(...dead);for(const p of al)pool.push(...p.hand.splice(0));shuffle(pool);
   al.forEach((p,k)=>{p.hand=pool.splice(0,n[k])});deck.push(...pool);if(G.device&&G.device.kn)G.device.kn.und=deck.length;bcHands('redeal');await redealFx()}
@@ -1616,7 +1710,7 @@ function buildTags(){const c=$('#tags');c.innerHTML='';for(let i=0;i<5;i++){cons
   d.innerHTML=`<div class="bubble"></div><div class="nm">${p.name}</div><div class="hands"></div><div class="meta"></div>`;d.addEventListener('click',()=>{if(G.ui==='target'&&p.alive)giveInput('target',i)});c.appendChild(d);p.tag=d}
   updateMe.v=null}
 function updateTags(){for(let i=0;i<5;i++){const p=G.players[i],d=p.tag;if(!d)continue;d.classList.toggle('active',G.actor===i&&p.alive);d.classList.toggle('dead',!p.alive);d.classList.toggle('targetable',G.ui==='target'&&p.alive);
-  d.querySelector('.hands').innerHTML=lifeHTML(p);d.querySelector('.meta').innerHTML=G.lobby3d?`<span>${p.lobTag||''}</span>`:p.alive?`<span><i class="cb"></i>×${G.game==='liar'?p.hand.length:p.cards.length}</span>${p.claims?`<span class="lie">mens. ${p.lies}/${p.claims}</span>`:''}${G.extra[i]?'<span class="sab">✂️×2</span>':''}`:'<span>a quitté la table</span>'}}
+  d.querySelector('.hands').innerHTML=lifeHTML(p);d.querySelector('.meta').innerHTML=G.lobby3d?`<span>${p.lobTag||''}</span>`:p.alive?`<span><i class="cb"></i>×${G.game==='liar'?p.hand.length:p.cards.length}</span>${p.claims?`<span class="lie">mens. ${p.lies}/${p.claims}</span>`:''}${G.game==='liar'&&!p.pwUsed?`<span class="pwi" title="${POW[anOf(i)].n}">${POW[anOf(i)].e}</span>`:''}${G.extra[i]?'<span class="sab">✂️×2</span>':''}`:'<span>a quitté la table</span>'}}
 function placeTags(){const L=!!G.lobby3d,arr=[];placeTags.lt=L?-1:lookTarget(G.view);for(let i=0;i<5;i++){const p=G.players[i],r=RIGS[i];if(!p||!p.tag||!r)continue;if(p.absent||r.fp){p.tag.style.display='none';continue}const s=toScreen(rigTagAnchor(r));if(!s||(!L&&(s[0]<-60||s[0]>CAM.w+60))){p.tag.style.display='none';continue}p.tag.style.display='';
   const x=clamp(s[0],44,CAM.w-44),y=clamp(s[1],L?40:CAM.h>CAM.w?118:60,CAM.h);p.tag.classList.toggle('me',L&&!!p.lobMe);p.tag.classList.toggle('al',x<CAM.w*.28);p.tag.classList.toggle('ar',x>CAM.w*.72);
   p.tag.classList.toggle('lk',!L&&i===placeTags.lt);
@@ -1641,7 +1735,7 @@ function renderHint(){const h=$('#hint');let top='',sub='',sm='';const d=G.devic
   else if(G.actor>=0&&G.players[G.actor]&&G.players[G.actor].alive)sub=isHm(G.actor)?'…':`${G.players[G.actor].name} ${G.acting?'agit':'réfléchit'}…`;
   h.innerHTML=(top?`<span class="you">${top}</span>`:'')+sub+(sm?`<span class="sm">${sm}</span>`:'')}
 function renderControls(){if(G.game==='liar'){$('#controls').innerHTML=liarControls();return}$('#controls').innerHTML=G.ui==='target'?G.players.filter(p=>p.alive&&p.i!==G.actor).map(p=>`<button class="btn" data-target="${p.i}">${YOU(p.i)?ME():p.name}</button>`).join(''):(G.device&&G.device.controls?G.device.controls():'')}
-function render(){if(!G.players.length)return;{const ob=$('#ocBtn');if(ob)ob.classList.toggle('show',G.game==='liar'&&ocEligibleMe())}updMic();$('#app').classList.toggle('liar',G.game==='liar');updateTags();updateMe();renderCards();renderControls();renderHint();{const hh=$('#hint');hh.classList.toggle('mine',hh.innerHTML.startsWith('<span class="you"'))}$('#roundLbl').innerHTML=G.device?`Manche ${G.round}<br>${G.device.name}`:''}
+function render(){if(!G.players.length)return;try{powUi()}catch(e){if(DBG)console.warn(e)}{const ob=$('#ocBtn');if(ob)ob.classList.toggle('show',G.game==='liar'&&ocEligibleMe())}updMic();$('#app').classList.toggle('liar',G.game==='liar');updateTags();updateMe();renderCards();renderControls();renderHint();{const hh=$('#hint');hh.classList.toggle('mine',hh.innerHTML.startsWith('<span class="you"'))}$('#roundLbl').innerHTML=G.device?`Manche ${G.round}<br>${G.device.name}`:''}
 
 /* ================= FLOW ================= */
 function pickTarget(i){const P=G.players[i].persona;let best=-1,bs=-1e9;for(const p of G.players){if(!p.alive||p.i===i)continue;const s=G.players[i].grudge[p.i]*1.5+(p.isHuman?P.humanBias:0)+p.hands*.4+rand()*.8;if(s>bs){bs=s;best=p.i}}return best}
@@ -1685,7 +1779,7 @@ async function applyHit(v,dead){const p=G.players[v];
 const gi=p.cards.indexOf('gant');
   if(gi>=0){p.cards.splice(gi,1);G.selCard=-1;toast('🧤 Gant de fer&nbsp;!',1300);log(YOU(v)?'🧤 Ton '+B('gant de fer')+' encaisse le coup&nbsp;!':`🧤 Le gant de fer de ${B(p.name)} encaisse le coup.`);render();await sleep(1300);return}
   if(G.rule==='gun'){log(`<span class="red">${B(S(v))} ${V(v,'a','as')} perdu&nbsp;: revolver sur la tempe.</span>`);toast(`🔫 ${YOU(v)?'À TOI DE TIRER':p.name.toUpperCase()}`,1400);if(!p.isHuman)say(v,line(v,'scared'));
-    if(await gunTrial(v))return kill(v);log(`Clic. ${B(S(v))} ${V(v,'survit','survis')} — ${6-p.shots} chambre${6-p.shots>1?'s':''} restante${6-p.shots>1?'s':''}.`);if(!p.isHuman&&rand()<.6)say(v,line(v,'safe'));render();await sleep(500);return}
+    if(await gunTrial(v))return kill(v);log(`Clic. ${B(S(v))} ${V(v,'survit','survis')} — ${6-fired(p)} chambre${6-fired(p)>1?'s':''} restante${6-fired(p)>1?'s':''}.`);if(!p.isHuman&&rand()<.6)say(v,line(v,'safe'));render();await sleep(500);return}
   p.hands--;log(`<span class="red">${B(S(v))} ${V(v,'perd','perds')} une main.</span>`);
   if(YOU(v)){toast('<span class="red">TU PERDS UNE MAIN</span>',1700);const o=G.players.filter(q=>q.alive&&!q.isHuman);if(o.length&&rand()<.85){const q=pick(o);RIGS[q.i].lookCamUntil=now()+1500;if(rand()<.35)RIGS[q.i].fuckUntil=now()+1700;setTimeout(()=>say(q.i,line(q.i,'taunt')),700/G.speed)}}
   else{say(v,line(v,'hit'));toast(`${p.name.toUpperCase()} PERD UNE MAIN`,1400)}
@@ -1702,7 +1796,7 @@ function addWin(){try{localStorage.setItem('mainbasse.wins',String(getWins()+1))
 function showDefeatMid(){const rank=aliveCount()+1;
   $('#endIn').innerHTML=`<div class="e-k">Éliminé</div><div class="e-t">Tu quittes la table</div><div class="e-s">${rank}<sup>e</sup> place. Les autres continuent sans toi.</div><button class="btn big" id="watchBtn">Regarder la fin</button><button class="btn" id="againBtn" style="width:100%">Rejouer</button>`;
   $('#end').classList.add('show');return waitInput('defeat')}
-function showEnd(){const w=G.players.find(p=>p.alive);G.score[w.name]=(G.score[w.name]||0)+1;const order=[w.i,...G.out.slice().reverse()];const you=G.online?w.i===G.me:(w.isHuman&&G.humans===1);const sh=w.shots,bt=w.bullet>=sh&&w.bullet<6?` La balle attendait dans la chambre ${w.bullet+1}.`:'';
+function showEnd(){const w=G.players.find(p=>p.alive);G.score[w.name]=(G.score[w.name]||0)+1;const order=[w.i,...G.out.slice().reverse()];const you=G.online?w.i===G.me:(w.isHuman&&G.humans===1);const sh=w.shots,rb=w.bullet-(w.sp||0),bt=w.bullet>=sh&&rb>=0&&rb<6?` La balle attendait dans la chambre ${rb+1}.`:'';
   if(you){addWin();SND.win()}else{SND.sting();RIGS[w.i].cheerUntil=now()+1e9}
   const wl=you?'':line(w.i,'win');
   $('#endIn').innerHTML=`<div class="e-k">${you?'Victoire':'Fin de partie'}</div><div class="e-t">${you?'La table est à toi':`${w.name} remporte la table`}</div>
@@ -1853,7 +1947,7 @@ function wakeOff(){try{WL&&WL.release()}catch(e){}WL=null}
 function saveProfile(){try{localStorage.setItem('mainbasse.profile',JSON.stringify({n:G.names[0]||'',a:G.myAnimal}))}catch(e){}}
 document.addEventListener('keydown',e=>{const tg=e.target;if(tg&&/^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName))return;if(e.metaKey||e.ctrlKey||e.altKey)return;if(document.querySelector('.ov.show'))return;const k=(e.key||'').toLowerCase();if(e.repeat&&k!=='arrowleft'&&k!=='arrowright')return;
   if(G.ui==='liar'){if(k>='1'&&k<='5'&&k.length===1){const idx=+k-1,p=G.players[G.view];if(G.lcan.play&&p&&idx<p.hand.length){const j=G.lsel.indexOf(idx);if(j>=0)G.lsel.splice(j,1);else if(G.lsel.length<3)G.lsel.push(idx);SND.card();render()}e.preventDefault()}
-    else if((k==='enter'||k===' ')&&G.lcan.play&&G.lsel.length){e.preventDefault();giveInput('liar',{cards:G.lsel.slice()})}
+    else if((k==='enter'||k===' ')&&G.lcan.play&&G.lsel.length&&G.lsel.length>=(G.lcan.min||1)){e.preventDefault();giveInput('liar',{cards:G.lsel.slice()})}
     else if(k==='m'&&G.lcan.call)giveInput('liar',{call:true});
     else if(k==='n'&&G.lcan.next)giveInput('liar',{next:true})}
   else if(G.ui==='ready'&&(k==='enter'||k===' ')){e.preventDefault();giveInput('ready',1)}
@@ -1869,11 +1963,11 @@ const BC=location.hash==='#bc',DBG=BC||location.hash==='#dbg';const dbg=k=>{if(D
 function bc(m){if(G.online!=='host')return;for(const c of NET.conns)c.send(m)}
 function connOf(seat){return NET.conns.find(c=>NET.seatOf[c.id]===seat)}
 function bcHands(t,extra){if(G.online!=='host')return;for(const c of NET.conns){const seat=NET.seatOf[c.id];c.send(Object.assign({t,hands:G.players.map((p,i)=>i===seat?p.hand.slice():p.hand.map(()=>'?'))},extra||{}))}}
-function bcPlay(who,cs,seq){if(G.online!=='host')return;for(const c of NET.conns)c.send({t:'play',who,seq,cards:NET.seatOf[c.id]===who?cs.slice():cs.map(()=>'?')})}
+function bcPlay(who,cs,seq,imm){if(G.online!=='host')return;for(const c of NET.conns){const own=NET.seatOf[c.id]===who;c.send({t:'play',who,seq,imm:!!imm,cards:own?cs.slice():cs.map(()=>'?'),hand:own?G.players[who].hand.slice():undefined})}}
 function netFx(k,who,tg){const m={t:'fx',k,who,tg};if(G.online==='host')bc(m);else if(G.online==='guest'&&NET.host)NET.host.send(m)}
 function applyFx(m){const r=RIGS[m.who];if(!r||!G.players[m.who]||!G.players[m.who].alive)return;if(m.k==='fk'){r.fuckUntil=now()+1900;const t=m.tg;r.fkT=Number.isInteger(t)&&t>=0&&t<5&&t!==m.who&&G.players[t]&&G.players[t].alive?t:null;if(r.fkT!=null){r.glT=r.fkT;r.glU=r.fuckUntil}}else if(m.k==='aim'&&G.players[m.tg]&&G.players[m.tg].alive)threaten(m.who,m.tg,2200);else if(m.k==='cg'){if(m.tg===-3)cigSet(m.who,0);else{cigSet(m.who,1);if(m.tg!==-2)cigPuff(m.who,m.tg)}}}
-function okDec(p,dec,last,forced,fin){if(!dec||typeof dec!=='object')return null;if(dec.call&&last)return{call:true};if(dec.next&&fin)return{next:true};
-  if(Array.isArray(dec.cards)&&!forced&&!fin){const c=[...new Set(dec.cards)].filter(k=>Number.isInteger(k)&&k>=0&&k<p.hand.length);if(c.length>=1&&c.length<=3)return{cards:c}}return null}
+function okDec(p,dec,last,forced,fin){if(!dec||typeof dec!=='object')return null;if(dec.call&&last&&(!last.imm||forced))return{call:true};if(dec.next&&fin)return{next:true};
+  if(Array.isArray(dec.cards)&&!forced&&!fin){const c=[...new Set(dec.cards)].filter(k=>Number.isInteger(k)&&k>=0&&k<p.hand.length);if(c.length>=Math.max(1,Math.min(p.hand.length,(G.turnRule&&G.turnRule.min)||1))&&c.length<=3)return{cards:c}}return null}
 function loadPeer(){return new Promise((res,rej)=>{if(window.Peer)return res();const urls=['https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js','https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js'];let k=0;
   const nx=()=>{if(k>=urls.length)return rej(new Error('lib'));const sc=document.createElement('script');sc.src=urls[k++];sc.onload=()=>window.Peer?res():nx();sc.onerror=nx;document.head.appendChild(sc)};nx()})}
 function wrapPJ(c){return{id:c.peer,send(d){try{if(c.open)c.send(d)}catch(e){}},onData(f){c.on('data',f)},onClose(f){c.on('close',f);c.on('error',f)},close(){try{c.close()}catch(e){}}}}
@@ -1898,7 +1992,7 @@ function lobbyHTML(){const L=NET.lobby,hst=NET.role==='host',tot=L.length+G.bots
    <button class="hb hb-l" id="lobQuit">↩<small>Quitter</small></button>
    <div class="hub-code"><small>Code de la partie</small><b class="code">${NET.code}</b></div>
    ${right}
-   <div class="hub-sel"><small>Changer de personnage</small><div><button class="hs" data-sel="-1">‹</button><b>${ANIMALS[mine].e} ${ANIMALS[mine].n}</b><button class="hs" data-sel="1">›</button></div></div>
+   <div class="hub-sel"><small class="pwl">✦ ${POW[mine].n}&nbsp;: ${POW[mine].s}</small><div><button class="hs" data-sel="-1">‹</button><b>${ANIMALS[mine].e} ${ANIMALS[mine].n}</b><button class="hs" data-sel="1">›</button></div></div>
    <div class="hub-bot">
     <div class="lobrow">Pseudo&nbsp;: <input id="lobName" class="nm-in" maxlength="12" autocomplete="off" style="flex:0 1 160px" value="${myName().replace(/["<>&]/g,'')}"></div>
     ${hst?`<div class="lobrow"><button class="btn" data-lb="-">−</button>Robots&nbsp;: ${G.bots}<button class="btn" data-lb="+">+</button><button class="btn" id="lobFc">⚡ Menteur libre&nbsp;: ${G.freeCall?'oui':'non'}</button></div>`:`<div class="lobrow" style="opacity:.75">⏳ L’hôte lancera la partie${G.freeCall?' · ⚡ Menteur libre':''}</div>`}
@@ -1909,7 +2003,7 @@ function inviteFriends(){const url=location.origin+location.pathname+'?j='+NET.c
   const full=txt+' — '+url;try{navigator.clipboard.writeText(full).then(()=>toast('Invitation copiée&nbsp;!',1600),()=>toast('Code&nbsp;: '+NET.code,2500))}catch(e){toast('Code&nbsp;: '+NET.code,2500)}}
 function animalPick(){const me=NET.role==='host'?NET.lobby[0]:NET.lobby.find(p=>p.me);const mine=me?me.animal:G.myAnimal;const taken=new Set(NET.lobby.filter(p=>p!==me).map(p=>p.animal));
   return`<div class="apick">${ANIMALS.map((a,k)=>`<button class="ab ${k===mine?'on':''}" data-an="${k}" ${taken.has(k)?'disabled':''}><span>${a.e}</span>${a.n}</button>`).join('')}</div>`}
-function pickAnimal(k){G.myAnimal=k;saveProfile();document.querySelectorAll('#title .ab').forEach(b=>b.classList.toggle('on',+b.dataset.an===k));if(NET.role==='host'){if(NET.lobby.some((p,j)=>j>0&&p.animal===k))return;NET.lobby[0].animal=k;drawLobby();pushLobby()}else if(NET.role==='guest'&&NET.host)NET.host.send({t:'animal',a:k})}
+function pickAnimal(k){G.myAnimal=k;saveProfile();{const t=$('#tPow');if(t)t.innerHTML=`✦ Pouvoir&nbsp;: <b>${POW[k].e} ${POW[k].n}</b> — ${POW[k].d}`}document.querySelectorAll('#title .ab').forEach(b=>b.classList.toggle('on',+b.dataset.an===k));if(NET.role==='host'){if(NET.lobby.some((p,j)=>j>0&&p.animal===k))return;NET.lobby[0].animal=k;drawLobby();pushLobby()}else if(NET.role==='guest'&&NET.host)NET.host.send({t:'animal',a:k})}
 function lobby3D(){if(!gl)return;const L=NET.lobby,hum=L.map((p,k)=>({name:p.name,a:p.animal==null?4:p.animal,tag:k===0?'👑 hôte':'✓ prêt',h:true}));const used=new Set(hum.map(x=>x.a)),free=botPool().filter(a=>!used.has(a));
   for(let k=0;k<G.bots&&k<free.length;k++)hum.push({name:PERSONAS[free[k]].name,a:free[k],tag:'🤖 robot',h:false});
   const order=[2,1,3,0,4],slots=[null,null,null,null,null];hum.forEach((x,k)=>{const e=L[k];x.me=e?(NET.role==='host'?k===0:!!e.me):false;x.tag=!e?'🤖 robot':k===0?'👑 hôte':e.ready?'✓ prêt':'… pas prêt'});
@@ -1944,6 +2038,7 @@ function hostMsg(c,m){if(!m||typeof m!=='object')return;
   if(m.t==='name'){const e=NET.lobby.find(p=>p.conn===c),v=cleanName(m.name);if(e&&v){e.name=v;if(G.online==='host'){const st=NET.seatOf[c.id];if(st!=null){G.players[st].name=v;buildTags();render()}}else drawLobby();pushLobby()}return}
   if(m.t==='ocall'){const seat=NET.seatOf[c.id];dbg('ocr');if(seat!=null&&m.seq===OC.seq&&ocTry(seat))dbg('ocg');return}
   if(m.t==='dec'){const seat=NET.seatOf[c.id],w=NET.wait[seat];if(w&&w.tk===TOKEN&&m.tid===w.tid){delete NET.wait[seat];w.res(m.dec)}return}
+  if(m.t==='pwu'){const seat=NET.seatOf[c.id];if(!(seat!=null&&G.actor===seat&&NET.wait[seat]&&G.pwCtx&&G.pwCtx.i===seat&&usePow(seat,{tg:m.tg,sel:m.sel})))c.send({t:'pwno'});return}
   if(m.t==='fx'){const seat=NET.seatOf[c.id];if(seat==null||m.who!==seat)return;applyFx(m);bc(m)}
   if(m.t==='spk'){const seat=NET.seatOf[c.id];if(seat==null)return;VOICE.spk[seat]=!!m.on;bc({t:'spk',who:seat,on:!!m.on})}}
 function hostDrop(c){if(NET.closing)return;NET.conns=NET.conns.filter(x=>x!==c);const k=NET.lobby.findIndex(p=>p.conn===c);if(k<0)return;const nm=NET.lobby[k].name;NET.lobby.splice(k,1);
@@ -1969,6 +2064,8 @@ function guestMsg(m){if(!m||typeof m!=='object')return;
   if(m.t==='lobby'){NET.lobby=m.names.map((n,k)=>({name:n,me:k===m.you,animal:(x=>Number.isInteger(x)&&x>=0&&x<ANIMALS.length?x:4)((m.animals||[])[k]),ready:!!(m.ready||[])[k]}));G.bots=m.bots;G.freeCall=!!m.fc;if(Array.isArray(m.pool)&&m.pool.length===ANIMALS.length)NET.botPool=m.pool.map(x=>+x|0);NET.vids=m.vids||{};voiceCallAll();if(G.online!=='guest')drawLobby();return}
   if(m.t==='start'){NET.q=[];NET.qw=null;NET.spd=+(m.cfg&&m.cfg.spd)||1;G.online='guest';$('#lobby').classList.remove('show');$('#title').classList.remove('show');$('#end').classList.remove('show');startGame(m.cfg);return}
   if(m.t==='fx'){applyFx(m);return}
+  if(m.t==='pwno'){G.pwWait=false;toast('Pouvoir impossible maintenant',1600);render();return}
+  if(m.t==='pw'){if(m.who===G.me&&pending&&pending.kind==='liar'&&!NET.q.length){powFx(m,false);return}NET.q.push(m);if(NET.qw){const w=NET.qw;NET.qw=null;w()}return}
   if(m.t==='spd'){NET.spd=clamp(+m.v||1,.5,4);G.speed=NET.spd;return}
   if(m.t==='hurry'){toast('⏱ Plus que 15 secondes pour jouer, sinon un robot joue à ta place',3200);SND.tick();return}
   if(m.t==='spk'){if(m.who!==G.me)VOICE.spk[m.who]=!!m.on;return}
@@ -1977,11 +2074,12 @@ function guestMsg(m){if(!m||typeof m!=='object')return;
 function nextMsg(){const t=TOKEN;return new Promise((res,rej)=>{const go=()=>{if(TOKEN!==t)return rej(ABORT);if(NET.q.length)return res(NET.q.shift());NET.qw=go};go()})}
 async function runGuest(){const d=G.device=Menteur();setTimeout(()=>{SND.thud();CAM.shake=Math.max(CAM.shake,.3)},140);G.focus=-1;G.round=1;render();await showIntro(d);G.round=0;let last=null;
   for(;;){const m=await nextMsg();G.speed=(NET.spd||1)*(NET.q.length>4?1.6:1);if(m.t==='end'){if(Array.isArray(m.bullets))G.players.forEach((p,i)=>{if(p.alive&&Number.isInteger(m.bullets[i]))p.bullet=m.bullets[i]});break}
-    if(m.t==='round'){G.round=m.round;d.clear();G.players.forEach((p,i)=>p.hand=(m.hands[i]||[]).slice());d.setTable(m.tc);dealFx();G.actor=-1;G.llast=null;last=null;render();toast(`Manche ${G.round} — table&nbsp;: ${LK[d.tc][1]}`,1600);await sleep(1500)}
-    else if(m.t==='turn'){if(!m.last)last=null;G.actor=m.a;G.focus=m.a;G.llast=last;render();
-      if(m.a===G.me&&G.players[G.me].alive&&!NET.q.length){let dec;if(G.autoplay)dec=await liarBot(G.me,last,m.forced,d,m.fin);else{G.lsel=[];G.lcan={call:!!last,play:!m.forced,next:!!m.fin};G.ui='liar';render();SND.turn();startHeart();try{dec=await waitInput('liar')}finally{stopHeart()}G.ui='';G.lsel=[];render()}if(!(dec&&dec.cancel))NET.host&&NET.host.send({t:'dec',dec,tid:m.tid})}}
-    else if(m.t==='play'){G.ocWho=m.who;G.ocSeq=m.seq;const P=G.players[m.who],cs=Array.isArray(m.cards)?m.cards.slice(0,3):['?'];for(const c of cs){const k=P.hand.indexOf(c);if(k>=0)P.hand.splice(k,1);else P.hand.pop()}G.acting=true;render();rigReach(RIGS[m.who],()=>wp(d.g,[0,.08,.1]));await sleep(380);d.playCards(m.who,cs);SND.card();SND.slide();
-      if(P.isHuman)toast(`${YOU(m.who)?ME():P.name}&nbsp;: «&nbsp;${claimTxt(cs.length,d.tc)}&nbsp;»`,1300);else say(m.who,claimTxt(cs.length,d.tc));await sleep(700);rigRelease(RIGS[m.who]);G.acting=false;last={who:m.who,cards:cs};G.llast=last;render();await sleep(450)}
+    if(m.t==='pw')powFx(m,false);
+    else if(m.t==='round'){G.round=m.round;G.paw=null;G.pwCtx=null;d.clear();G.players.forEach((p,i)=>p.hand=(m.hands[i]||[]).slice());d.setTable(m.tc);dealFx();G.actor=-1;G.llast=null;last=null;render();toast(`Manche ${G.round} — table&nbsp;: ${LK[d.tc][1]}`,1600);await sleep(1500)}
+    else if(m.t==='turn'){if(!m.last)last=null;if(last)last.imm=!!m.imm;G.actor=m.a;G.focus=m.a;G.llast=last;G.turnRule={min:m.min||1};G.pwCtx={i:m.a,last,forced:!!m.forced,fin:!!m.fin};render();
+      if(m.a===G.me&&G.players[G.me].alive&&!NET.q.length){let dec;if(G.autoplay)dec=await liarBot(G.me,last,m.forced,d,m.fin);else{G.lsel=[];G.lcan={call:!!last&&(!m.imm||!!m.forced),play:!m.forced,next:!!m.fin,min:m.min||1};G.ui='liar';render();SND.turn();startHeart();try{dec=await waitInput('liar')}finally{stopHeart()}G.ui='';G.lsel=[];render()}G.pwCtx=null;if(!(dec&&dec.cancel))NET.host&&NET.host.send({t:'dec',dec,tid:m.tid})}}
+    else if(m.t==='play'){G.pwCtx=null;G.ocWho=m.imm?null:m.who;G.ocSeq=m.seq;const P=G.players[m.who],cs=Array.isArray(m.cards)?m.cards.slice(0,3):['?'];if(m.who===G.me&&Array.isArray(m.hand))P.hand=m.hand.filter(x=>LK[x]);else for(const c of cs){const k=P.hand.indexOf(c);if(k>=0)P.hand.splice(k,1);else P.hand.pop()}G.acting=true;render();rigReach(RIGS[m.who],()=>wp(d.g,[0,.08,.1]));await sleep(380);d.playCards(m.who,cs);SND.card();SND.slide();
+      if(P.isHuman)toast(`${YOU(m.who)?ME():P.name}&nbsp;: «&nbsp;${claimTxt(cs.length,d.tc)}&nbsp;»`,1300);else say(m.who,claimTxt(cs.length,d.tc));await sleep(700);rigRelease(RIGS[m.who]);G.acting=false;last={who:m.who,cards:cs,imm:!!m.imm};G.llast=last;render();await sleep(450)}
     else if(m.t==='call'){G.ocWho=null;render();if(last){if(Array.isArray(m.cards)&&m.cards.length===last.cards.length&&m.cards.every(c=>LK[c]))last.cards=m.cards.slice();await liarCall(m.who,last,d)}}
     else if(m.t==='shot'){const p=G.players[m.who];p.bullet=m.bang?p.shots:99;G.actor=m.who;render();toast(`🔫 ${YOU(m.who)?'À TOI DE TIRER':NM(m.who).toUpperCase()}`,1300);await sleep(900);
       if(await gunTrial(m.who))await kill(m.who);else await sleep(600);render()}
@@ -2037,14 +2135,14 @@ $('#micBtn').addEventListener('click',()=>micToggle());
 /* ================= INIT ================= */
 if(getWins())$('#record').textContent=`Victoires : ${getWins()} · son conseillé`;
 try{const pf=JSON.parse(localStorage.getItem('mainbasse.profile')||'{}');if(pf&&pf.n)G.names[0]=cleanName(pf.n);if(pf&&Number.isInteger(pf.a)&&pf.a>=0&&pf.a<ANIMALS.length)G.myAnimal=pf.a}catch(e){}
-namesUI();$('#tPick').innerHTML=ANIMALS.map((a,k)=>`<button class="ab ${k===G.myAnimal?'on':''}" data-an="${k}"><span>${a.e}</span>${a.n}</button>`).join('');$('#tPick').addEventListener('click',e=>{const b=e.target.closest('.ab');if(b)pickAnimal(+b.dataset.an)});resizeStage();
+namesUI();$('#tPick').innerHTML=ANIMALS.map((a,k)=>`<button class="ab ${k===G.myAnimal?'on':''}" data-an="${k}"><span>${a.e}</span>${a.n}</button>`).join('');$('#tPick').addEventListener('click',e=>{const b=e.target.closest('.ab');if(b)pickAnimal(+b.dataset.an)});{const t=$('#tPow');if(t)t.innerHTML=`✦ Pouvoir&nbsp;: <b>${POW[G.myAnimal].e} ${POW[G.myAnimal].n}</b> — ${POW[G.myAnimal].d}`}resizeStage();
 let ok=false;try{ok=glInit();if(ok)initWorld()}catch(e){console.error(e);ok=false}
 try{const jc=(new URLSearchParams(location.search).get('j')||'').toUpperCase().replace(/[^A-Z]/g,'');if(jc.length===4){showJoin(jc);history.replaceState(null,'',location.pathname+location.hash)}}catch(e){}
 if(!ok){$('#nogl').style.display='flex'}
 if(BUILD){const b=String(BUILD);$('#ver').textContent=`Version du ${b.slice(6,8)}/${b.slice(4,6)} à ${b.slice(8,10)} h ${b.slice(10,12)}`}
 setTimeout(checkUpdate,900);
 requestAnimationFrame(frame);
-if(DBG)window.__MB={GSd:()=>GS.drop,BL,SMOKE,now,cigSet,cigPuff,cigTap,CIG,STORM,DEAL,tableSlam,SMC,A2,lookBy,lookReset,NET,SND,headshot,GUNF:()=>GUN,M4,gunTrial,toScreen,wp,G,startGame,RIGS:()=>RIGS,PARTS,CAM,LSEATS};
+if(DBG)window.__MB={usePow,powCan,POW,anOf,GSd:()=>GS.drop,BL,SMOKE,now,cigSet,cigPuff,cigTap,CIG,STORM,DEAL,tableSlam,SMC,A2,lookBy,lookReset,NET,SND,headshot,GUNF:()=>GUN,M4,gunTrial,toScreen,wp,G,startGame,RIGS:()=>RIGS,PARTS,CAM,LSEATS};
 })();
 </script>
 </body>
